@@ -1,7 +1,8 @@
 import os
+from typing import Optional
 
 
-def get_env(name: str, default: str | None = None) -> str | None:
+def get_env(name: str, default: Optional[str] = None) -> Optional[str]:
     return os.getenv(name, default)
 
 

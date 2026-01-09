@@ -1,0 +1,24 @@
+{
+  "extends": "expo/tsconfig.base.json",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ],
+  "exclude": [
+    "legacy_frontend_old/**/*",
+    "components/legacy_frontend_old/**/*",
+    "navigation/legacy_frontend_old/**/*",
+    "lib/legacy_frontend_old/**/*",
+    "hooks/legacy_frontend_old/**/*"
+  ]
+}

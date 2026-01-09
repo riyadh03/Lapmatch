@@ -1,8 +1,9 @@
 from fastapi import APIRouter
+from app.utils.helpers import ok
 
 router = APIRouter(prefix="/recommend", tags=["recommend"])
 
 
-@router.get("")
+@router.get("/")
 def recommend():
-    return {"todo": True}
+    return ok({"todo": True})

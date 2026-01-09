@@ -1,9 +1,10 @@
 from fastapi import Depends, Header, HTTPException
+from typing import Optional
 
 from app.auth.firebase import init_firebase
 
 
-def get_current_user(authorization: str | None = Header(default=None)):
+def get_current_user(authorization: Optional[str] = Header(default=None)):
     init_firebase()
 
     if not authorization:

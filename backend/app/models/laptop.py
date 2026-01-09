@@ -1,7 +1,8 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class Laptop(BaseModel):
-    id: str | None = None
-    brand: str | None = None
-    model: str | None = None
+    id: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
