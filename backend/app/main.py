@@ -53,4 +53,3 @@ app.include_router(users_router)
 app.include_router(laptops_router)
 app.include_router(recommend_router)
 app.include_router(health_neo4j_router)
-
