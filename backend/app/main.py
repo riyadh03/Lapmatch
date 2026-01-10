@@ -8,6 +8,7 @@ from app.routes.laptops import router as laptops_router
 from app.routes.recommend import router as recommend_router
 from app.routes.users import router as users_router
 from app.routes.health_neo4j import router as health_neo4j_router
+from app.routes.admin import router as admin_router
 
 app = FastAPI(title="LapMatch API Backend")
 
@@ -53,3 +54,4 @@ app.include_router(users_router)
 app.include_router(laptops_router)
 app.include_router(recommend_router)
 app.include_router(health_neo4j_router)
+app.include_router(admin_router)
