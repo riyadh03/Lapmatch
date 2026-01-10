@@ -1,19 +1,31 @@
-from app.core.config import FIREBASE_CREDENTIALS_PATH
+# app/auth/firebase.py
+import firebase_admin
+from firebase_admin import auth, credentials
+from app.services.user_service import create_user, get_user_by_uid
+import os
 
-_app = None
+# Initialisation Firebase
+if not firebase_admin._apps:
+    cred = credentials.Certificate(os.getenv("FIREBASE_SERVICE_ACCOUNT"))
+    firebase_admin.initialize_app(cred)
 
+def verify_firebase_token(id_token: str):
+    """
+    Vérifie le token Firebase et crée l'utilisateur Neo4j si nécessaire
+    """
+    try:
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token["uid"]
+        email = decoded_token.get("email")
 
-def init_firebase():
-    global _app
-    if _app is not None:
-        return _app
+        user = get_user_by_uid(uid)
+        if not user:
+            user = create_user(uid, email)
 
-    if not FIREBASE_CREDENTIALS_PATH:
+        return {
+            "uid": uid,
+            "email": email
+        }
+    except Exception as e:
+        print("Erreur Firebase:", e)
         return None
-
-    import firebase_admin
-    from firebase_admin import credentials
-
-    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
-    _app = firebase_admin.initialize_app(cred)
-    return _app

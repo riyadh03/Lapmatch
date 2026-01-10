@@ -1,13 +1,18 @@
-from fastapi import Depends, Header, HTTPException
-from typing import Optional
+# app/auth/dependencies.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from .firebase import verify_firebase_token
 
-from app.auth.firebase import init_firebase
+security = HTTPBearer()
 
-
-def get_current_user(authorization: Optional[str] = Header(default=None)):
-    init_firebase()
-
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Missing Authorization header")
-
-    return {"uid": "TODO"}
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    user = verify_firebase_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token Firebase invalide"
+        )
+    return user
