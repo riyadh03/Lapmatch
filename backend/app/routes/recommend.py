@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from app.services.recommendation import recommend_non_expert
+from app.auth.dependencies import get_current_user
 
 router = APIRouter(
     prefix="/recommendations",
@@ -15,7 +16,8 @@ def get_non_expert_recommendations(
     min_rating: float = Query(0, ge=0, le=5),
     storage_gb: int = Query(0, ge=0),
     offset: int = Query(0, ge=0),
-    limit: int = Query(7, ge=1, le=20)
+    limit: int = Query(7, ge=1, le=20),
+    user=Depends(get_current_user)   # 🔐 AJOUT ICI
 ):
     if usage_name not in ALLOWED_USAGES:
         raise HTTPException(
