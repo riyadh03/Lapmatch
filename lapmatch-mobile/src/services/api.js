@@ -1,14 +1,38 @@
-
 // src/services/api.js
 
 import { getAuth } from "firebase/auth";
 
 /**
- * URL de base du backend FastAPI
- * ⚠️ Si tu testes sur téléphone physique :
- * remplace 127.0.0.1 par ton IP locale via la commande ipconfig dans le cmd (ex: "http://192.168.11.107:8000")
+ * Configuration de l'URL de base du backend FastAPI
+ *
+ * Pour utiliser ngrok (pour permettre aux collaborateurs de tester) :
+ * 1. Installe ngrok : https://ngrok.com/download
+ * 2. Lance ngrok : ngrok http 8000
+ * 3. Copie l'URL HTTPS générée (ex: https://xxxx-xx-xx-xx-xx.ngrok-free.app)
+ * 4. Définis la variable d'environnement EXPO_PUBLIC_NGROK_URL avec cette URL
+ *    OU modifie directement NGROK_URL ci-dessous
+ *
+ * Pour développement local :
+ * - Utilise ton IP locale (ex: "http://192.168.11.107:8000")
+ * - Trouve ton IP avec : ipconfig (Windows) ou ifconfig (Mac/Linux)
  */
-const BASE_URL = "http://192.168.11.107:8000";
+const NGROK_URL = "https://furlable-salina-stereochromically.ngrok-free.dev";
+const LOCAL_URL = "http://192.168.11.107:8000";
+
+/**
+ * Détermine l'URL de base à utiliser
+ * Priorité : ngrok > URL locale
+ */
+const getBaseUrl = () => {
+  if (NGROK_URL) {
+    console.log("🌐 Utilisation de ngrok:", NGROK_URL);
+    return NGROK_URL;
+  }
+  console.log("🏠 Utilisation de l'URL locale:", LOCAL_URL);
+  return LOCAL_URL;
+};
+
+const BASE_URL = getBaseUrl();
 
 /**
  * Récupère le token Firebase de l'utilisateur connecté
@@ -58,17 +82,16 @@ export const fetchExpertRecommendations = async (params) => {
 
   const query = new URLSearchParams(params).toString();
 
-  const response = await fetch(
-    `${BASE_URL}/recommendations/expert?${query}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await fetch(`${BASE_URL}/recommendations/expert?${query}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   if (!response.ok) {
-    throw new Error("Erreur lors de la récupération des recommandations expert");
+    throw new Error(
+      "Erreur lors de la récupération des recommandations expert"
+    );
   }
 
   return await response.json();
