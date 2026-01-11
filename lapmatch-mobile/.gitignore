@@ -9,6 +9,10 @@ dist/
 web-build/
 expo-env.d.ts
 
+# IDE configurations (chaque développeur a sa propre config)
+.vscode/
+.idea/
+
 # Native
 .kotlin/
 *.orig.*

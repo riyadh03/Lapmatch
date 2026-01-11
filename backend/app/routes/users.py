@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.services.user_service import create_user_node
+from app.services.user_service import create_user
 
 router = APIRouter(
     prefix="/users",
@@ -13,9 +13,9 @@ class UserCreateRequest(BaseModel):
     full_name: str = None
 
 @router.post("/create")
-def create_user(user: UserCreateRequest):
+def create_user_endpoint(user: UserCreateRequest):
     try:
-        node = create_user_node(user.uid, user.email, user.full_name)
+        node = create_user(user.uid, user.email)
         return {"message": "User created in Neo4j", "user": dict(node)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
