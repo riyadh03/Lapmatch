@@ -67,7 +67,7 @@ export default function HomeScreen({ navigation }) {
         />
         <SearchCard
           title="Laptop comparison"
-          description="je sais pas quoi dire."
+          description="Compare multiple laptops side by side to find the best deal."
           badgeText="Hot"
           badgeColor="#7C4DFF"
           iconColor="#7C4DFF"
@@ -76,7 +76,7 @@ export default function HomeScreen({ navigation }) {
         />
         <SearchCard
           title="Search by name"
-          description="ches pas quoi dire."
+          description="Find laptops by their model names or brands quickly."
           badgeText="new"
           badgeColor="#ff8307"
           iconColor="#ff8307"
