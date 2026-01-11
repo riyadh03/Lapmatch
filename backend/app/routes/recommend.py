@@ -53,6 +53,8 @@ def get_recommendations_expert(
     eco_level: Optional[str] = Query(None, description="Eco level if any"),
     offset: int = Query(0, description="Pagination offset"),
     limit: int = Query(7, description="Pagination limit")
+    #user=Depends(get_current_user)   # 🔐 AJOUT ICI
+
 ):
     """
     Return a list of laptops filtered for expert users

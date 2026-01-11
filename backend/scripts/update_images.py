@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 from app.core.neo4j import neo4j_db
+from app.services.scraping import scrape_and_update_laptops
+
 
 def scrape_flipkart_image(url: str) -> str | None:
     """
@@ -59,3 +61,13 @@ def scrape_and_update_laptops(laptops: list[dict]):
                 print(f"Image mise à jour pour laptop {laptop_id}")
             else:
                 print(f"Échec mise à jour pour laptop {laptop_id}")
+
+if __name__ == "__main__":
+    laptops = neo4j_db.execute_query(
+        "MATCH (l:Laptop) RETURN l.laptop_id AS laptop_id, l.external_link AS external_link"
+    )
+    laptops_list = [
+        {"laptop_id": r["laptop_id"], "external_link": r["external_link"]}
+        for r in laptops
+    ]
+    scrape_and_update_laptops(laptops_list)

@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAuth } from "firebase/auth";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // On utilise Ionicons pour toutes les icônes
+
+
 
 // --- Composant SearchCard Intégré ---
 const SearchCard = ({ title, description, badgeText, onPress, iconName, badgeColor, iconColor }) => {
@@ -25,6 +28,13 @@ const SearchCard = ({ title, description, badgeText, onPress, iconName, badgeCol
 
 
 export default function HomeScreen({ navigation }) {
+  const [pcList, setPcList] = useState([]);
+  useEffect(() => {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      navigation.replace("Login");
+    }
+  }, []);
   return (
     <ScrollView style={styles.container}>
       {/* 🔍 Icône loupe en haut à droite */}
