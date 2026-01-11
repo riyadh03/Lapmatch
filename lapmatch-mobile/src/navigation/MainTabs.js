@@ -61,7 +61,7 @@ export default function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           let iconName;
           if (route.name === 'HomeTab') iconName = 'home';
-          else if (route.name === 'Favoris') iconName = 'star';
+          else if (route.name === 'Favoris') iconName = 'heart';
           else if (route.name === 'Logout') iconName = 'log-out';
           return <Ionicons name={iconName} size={size} color={color} />;
         },
