@@ -28,8 +28,26 @@ export default function LoginScreen({ navigation }) {
 
   // 🔹 Fonction pour gérer le login
   const handleLogin = async () => {
+    // Validation basique
+    if (!email || !email.trim()) {
+      console.log("Email requis");
+      return;
+    }
+    
+    if (!password || !password.trim()) {
+      console.log("Mot de passe requis");
+      return;
+    }
+
+    // Validation format email basique
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      console.log("Format d'email invalide");
+      return;
+    }
+
     try {
-      const userCredential = await loginUser(email, password);
+      const userCredential = await loginUser(email.trim(), password);
       console.log("Login successful, UID:", userCredential.user.uid);
       navigation.navigate('Home');
     } catch (error) {

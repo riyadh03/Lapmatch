@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
-import AppButton from '../components/AppButton';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  ScrollView,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
+import AppButton from "../components/AppButton";
 import { fetchExpertRecommendations } from "../services/api";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function AdvancedSearchScreen({ navigation }) {
   // États pour les filtres
@@ -13,37 +21,35 @@ export default function AdvancedSearchScreen({ navigation }) {
   const [budget, setBudget] = useState(15000);
 
   useEffect(() => {
-  const loadFilters = async () => {
-    try {
-      const storedCpu = await AsyncStorage.getItem('advancedSearchCpu');
-      const storedRam = await AsyncStorage.getItem('advancedSearchRam');
-      const storedBudget = await AsyncStorage.getItem('advancedSearchBudget');
+    const loadFilters = async () => {
+      try {
+        const storedCpu = await AsyncStorage.getItem("advancedSearchCpu");
+        const storedRam = await AsyncStorage.getItem("advancedSearchRam");
+        const storedBudget = await AsyncStorage.getItem("advancedSearchBudget");
 
-      if (storedCpu) setCpu(storedCpu);
-      if (storedRam) setRam(Number(storedRam));
-      if (storedBudget) setBudget(Number(storedBudget));
-    } catch (error) {
-      console.error("Erreur lors du chargement des filtres", error);
-    }
-  };
+        if (storedCpu) setCpu(storedCpu);
+        if (storedRam) setRam(Number(storedRam));
+        if (storedBudget) setBudget(Number(storedBudget));
+      } catch (error) {
+        console.error("Erreur lors du chargement des filtres", error);
+      }
+    };
+
+    loadFilters();
+  }, []); // [] → seulement au montage du composant
 
   useEffect(() => {
     const saveFilters = async () => {
       try {
-        await AsyncStorage.setItem('advancedSearchCpu', cpu);
-        await AsyncStorage.setItem('advancedSearchRam', ram.toString());
-        await AsyncStorage.setItem('advancedSearchBudget', budget.toString());
+        await AsyncStorage.setItem("advancedSearchCpu", cpu);
+        await AsyncStorage.setItem("advancedSearchRam", ram.toString());
+        await AsyncStorage.setItem("advancedSearchBudget", budget.toString());
       } catch (error) {
         console.error("Erreur lors de la sauvegarde des filtres", error);
       }
     };
     saveFilters();
   }, [cpu, ram, budget]); // déclenche à chaque modification
-
-
-  loadFilters();
-}, []); // [] → seulement au montage du composant
-
 
   // États pour la visibilité des Modals
   const [activeModal, setActiveModal] = useState(null); // 'brand', 'cpu', ou 'ram'
@@ -55,7 +61,7 @@ export default function AdvancedSearchScreen({ navigation }) {
     "Intel i9",
     "Ryzen 3",
     "Ryzen 5",
-    "Ryzen 7"
+    "Ryzen 7",
   ];
 
   const normalizeCpu = (cpuLabel) => {
@@ -72,7 +78,7 @@ export default function AdvancedSearchScreen({ navigation }) {
     try {
       const data = await fetchExpertRecommendations({
         cpu_type: normalizeCpu(cpu),
-        gpu_type: "",        // optionnel
+        gpu_type: "", // optionnel
         ram_gb: ram,
         storage_gb: 512,
         budget: budget,
@@ -91,14 +97,12 @@ export default function AdvancedSearchScreen({ navigation }) {
     }
   };
 
-
-
   // Composant pour les champs de sélection
   const SelectInput = ({ label, value, placeholder, onPress }) => (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
       <TouchableOpacity style={styles.pickerInput} onPress={onPress}>
-        <Text style={{ color: value ? '#fff' : '#A0A0BC' }}>
+        <Text style={{ color: value ? "#fff" : "#A0A0BC" }}>
           {value || placeholder}
         </Text>
         <MaterialCommunityIcons name="chevron-down" size={24} color="#A0A0BC" />
@@ -106,34 +110,35 @@ export default function AdvancedSearchScreen({ navigation }) {
     </View>
   );
 
-
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <Text style={styles.title}>Advanced Search</Text>
 
       {/* Sélection du Processeur */}
-      <SelectInput 
-        label="Processeur" 
-        value={cpu} 
-        placeholder="Choisir un CPU" 
-        onPress={() => setActiveModal('cpu')} 
+      <SelectInput
+        label="Processeur"
+        value={cpu}
+        placeholder="Choisir un CPU"
+        onPress={() => setActiveModal("cpu")}
       />
 
       {/* Sélection de la RAM (Nouveau) */}
-      <SelectInput 
+      <SelectInput
         label="Mémoire RAM"
         value={`${ram} GB`}
         placeholder="Choisir la capacité"
-        onPress={() => setActiveModal('ram')}
+        onPress={() => setActiveModal("ram")}
       />
-
 
       {/* Slider Budget */}
       <Text style={styles.label}>Budget Maximum</Text>
       <View style={styles.sliderContainer}>
         <Text style={styles.valueText}>{budget} dh</Text>
         <Slider
-          style={{ width: '100%', height: 40 }}
+          style={{ width: "100%", height: 40 }}
           minimumValue={2000}
           maximumValue={40000}
           step={500}
@@ -153,17 +158,19 @@ export default function AdvancedSearchScreen({ navigation }) {
       </View>
 
       {/* Modal Unique Dynamique */}
-      <SelectionModal 
-        visible={activeModal !== null} 
-        setVisible={() => setActiveModal(null)} 
+      <SelectionModal
+        visible={activeModal !== null}
+        setVisible={() => setActiveModal(null)}
         data={
-          activeModal === 'ram' ? ramOptions : 
-          activeModal === 'cpu' ? cpuOptions : 
-          ramOptions
-        } 
+          activeModal === "ram"
+            ? ramOptions
+            : activeModal === "cpu"
+            ? cpuOptions
+            : ramOptions
+        }
         onSelect={(val) => {
-          if(activeModal === 'cpu') setCpu(val);
-          if(activeModal === 'ram') setRam(val);
+          if (activeModal === "cpu") setCpu(val);
+          if (activeModal === "ram") setRam(val);
           setActiveModal(null);
         }}
         title={activeModal?.toUpperCase()}
@@ -201,29 +208,66 @@ const SelectionModal = ({ visible, setVisible, data, onSelect, title }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#12122C', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 10 },
-  label: { fontSize: 16, color: '#fff', marginTop: 20, marginBottom: 10, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: "#12122C", padding: 20 },
+  title: { fontSize: 24, fontWeight: "bold", color: "#fff", marginBottom: 10 },
+  label: {
+    fontSize: 16,
+    color: "#fff",
+    marginTop: 20,
+    marginBottom: 10,
+    fontWeight: "600",
+  },
   pickerInput: {
-    backgroundColor: '#1E1E3F',
+    backgroundColor: "#1E1E3F",
     padding: 15,
     borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#4A4A6A'
+    borderColor: "#4A4A6A",
   },
-  sliderContainer: { backgroundColor: '#1E1E3F', borderRadius: 12, padding: 15, borderWidth: 1, borderColor: '#4A4A6A' },
-  valueText: { color: '#4953DD', fontSize: 20, fontWeight: 'bold', marginBottom: 5 },
-  rangeTextContainer: { flexDirection: 'row', justifyContent: 'space-between' },
-  rangeText: { color: '#A0A0BC', fontSize: 12 },
+  sliderContainer: {
+    backgroundColor: "#1E1E3F",
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#4A4A6A",
+  },
+  valueText: {
+    color: "#4953DD",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  rangeTextContainer: { flexDirection: "row", justifyContent: "space-between" },
+  rangeText: { color: "#A0A0BC", fontSize: 12 },
   buttonContainer: { marginTop: 40 },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.8)' },
-  modalContent: { backgroundColor: '#1E1E3F', borderTopLeftRadius: 25, borderTopRightRadius: 25, padding: 20, maxHeight: '70%' },
-  modalTitle: { color: '#A0A0BC', fontSize: 14, marginBottom: 15, textAlign: 'center', fontWeight: 'bold' },
-  modalItem: { padding: 20, borderBottomWidth: 1, borderBottomColor: '#2D2D50' },
-  modalItemText: { color: '#fff', fontSize: 18 },
-  modalCloseButton: { marginTop: 10, padding: 20, alignItems: 'center' },
-  modalCloseText: { color: '#4953DD', fontWeight: 'bold', fontSize: 16 }
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.8)",
+  },
+  modalContent: {
+    backgroundColor: "#1E1E3F",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    padding: 20,
+    maxHeight: "70%",
+  },
+  modalTitle: {
+    color: "#A0A0BC",
+    fontSize: 14,
+    marginBottom: 15,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  modalItem: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#2D2D50",
+  },
+  modalItemText: { color: "#fff", fontSize: 18 },
+  modalCloseButton: { marginTop: 10, padding: 20, alignItems: "center" },
+  modalCloseText: { color: "#4953DD", fontWeight: "bold", fontSize: 16 },
 });
