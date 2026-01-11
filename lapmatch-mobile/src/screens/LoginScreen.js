@@ -14,50 +14,64 @@
 // //     </View>
 // //   );
 // // }
-
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons'; 
 import AppButton from '../components/AppButton'; 
-
+import { loginUser } from '../services/authService';
 
 export default function LoginScreen({ navigation }) {
+
+  // 🔹 États pour les inputs
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // 🔹 Fonction pour gérer le login
+  const handleLogin = async () => {
+    try {
+      const userCredential = await loginUser(email, password);
+      console.log("Login successful, UID:", userCredential.user.uid);
+      navigation.navigate('Home');
+    } catch (error) {
+      console.log("Login error:", error.message || error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       
-      {/* Utilisation de l'icône 'laptop' dans son conteneur mauve */}
       <View style={styles.logoContainer}>
-        {/* 'FontAwesome' est maintenant un composant au lieu de 'Icon' */}
         <FontAwesome name="laptop" size={40} color="#4953DD" /> 
       </View>
-      {/* J'ai retiré <View/> et logoPlaceholder qui étaient en conflit */}
 
       <Text style={styles.title}>LaptopFinder</Text>
       <Text style={styles.subtitle}>Find your perfect laptop</Text>
 
-      {/* Input Email stylisé */}
       <View style={styles.inputContainer}>
         <TextInput 
           style={styles.input} 
           placeholder="Email" 
           placeholderTextColor="#A0A0BC" 
           keyboardType="email-address"
+          value={email}               // 🔹
+          onChangeText={setEmail}     // 🔹
         />
       </View>
       
-      {/* Input Password stylisé */}
       <View style={styles.inputContainer}>
         <TextInput 
           style={styles.input} 
           placeholder="Password" 
           placeholderTextColor="#A0A0BC" 
           secureTextEntry 
+          value={password}            // 🔹
+          onChangeText={setPassword}  // 🔹
         />
       </View>
       
       <AppButton 
         title="Sign In" 
-        onPress={() => navigation.navigate('Home')} 
+        onPress={handleLogin} // 🔹
       />
 
       <View style={styles.signupContainer}>
@@ -69,6 +83,7 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.demoText}>Demo: user@test.com / password123</Text>
         <Text style={styles.demoText}>Admin: admin@test.com / admin123</Text>
       </View>
+      
     </View>
   );
 }
@@ -80,15 +95,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#12122C', 
   },
-  // Style pour le conteneur mauve avec l'icône centrée
   logoContainer: {
     width: 80,
     height: 80,
-    backgroundColor: 'transparent', // Le violet de l'image
+    backgroundColor: 'transparent',
     borderRadius: 15,
-    alignSelf: 'center', // Centre le bloc horizontalement
-    justifyContent: 'center', // Centre l'icône verticalement
-    alignItems: 'center', // Centre l'icône horizontalement
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 20,
     color: '#4953DD',
   },
