@@ -8,6 +8,11 @@ def recommend_non_expert(
     offset: int = 0,
     limit: int = 7
 ):
+    import time
+    query_start = time.time()
+    print(f"[NEO4J] 🔍 Début de la requête Neo4j")
+    print(f"[NEO4J] 📋 Paramètres: usage={usage_name}, price={max_price}, rating={min_rating}, storage={storage_gb}")
+    
     query = """
     MATCH (l:Laptop)-[:SUITABLE_FOR]->(u:Usage {usage_name: $usage_name})
     WHERE 
@@ -32,10 +37,22 @@ def recommend_non_expert(
         "limit": limit
     }
 
+    print(f"[NEO4J] ⏳ Exécution de la requête Cypher...")
+    exec_start = time.time()
     result = neo4j_db.execute_query(query, params)
+    exec_duration = time.time() - exec_start
+    print(f"[NEO4J] ⏱️ Requête exécutée en {exec_duration:.2f}s")
 
     # Conversion Neo4j → dict JSON
+    print(f"[NEO4J] 🔄 Conversion des résultats...")
+    convert_start = time.time()
     laptops = [dict(record["l"]) for record in result]
+    convert_duration = time.time() - convert_start
+    print(f"[NEO4J] ✅ Conversion terminée en {convert_duration:.2f}s - {len(laptops)} laptops")
+    
+    total_duration = time.time() - query_start
+    print(f"[NEO4J] 🏁 Total: {total_duration:.2f}s")
+    
     return laptops
 
 

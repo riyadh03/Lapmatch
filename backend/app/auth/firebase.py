@@ -42,23 +42,47 @@ def verify_firebase_token(id_token: str):
     """
     Vérifie le token Firebase et crée l'utilisateur Neo4j si nécessaire
     """
+    import time
+    start_time = time.time()
+    print(f"[FIREBASE] 🔐 Début de la vérification du token...")
+    
     try:
         if not firebase_admin._apps:
+            print(f"[FIREBASE] ❌ Firebase non initialisé")
             return None
         
+        verify_start = time.time()
         decoded_token = auth.verify_id_token(id_token)
+        verify_duration = time.time() - verify_start
+        print(f"[FIREBASE] ✅ Token vérifié en {verify_duration:.2f}s")
+        
         uid = decoded_token["uid"]
         email = decoded_token.get("email")
+        print(f"[FIREBASE] 👤 UID: {uid}, Email: {email}")
 
+        neo4j_start = time.time()
         user = get_user_by_uid(uid)
+        neo4j_duration = time.time() - neo4j_start
+        print(f"[FIREBASE] ⏱️ get_user_by_uid en {neo4j_duration:.2f}s")
+        
         if not user:
+            print(f"[FIREBASE] ➕ Création de l'utilisateur dans Neo4j...")
+            create_start = time.time()
             user = create_user(uid, email)
+            create_duration = time.time() - create_start
+            print(f"[FIREBASE] ✅ Utilisateur créé en {create_duration:.2f}s")
+        else:
+            print(f"[FIREBASE] ✅ Utilisateur trouvé dans Neo4j")
 
+        total_duration = time.time() - start_time
+        print(f"[FIREBASE] 🏁 Vérification terminée en {total_duration:.2f}s total")
+        
         return {
             "uid": uid,
             "email": email
         }
     except Exception as e:
-        print("Erreur Firebase:", e)
+        duration = time.time() - start_time
+        print(f"[FIREBASE] ❌ Erreur après {duration:.2f}s: {e}")
         return None
         

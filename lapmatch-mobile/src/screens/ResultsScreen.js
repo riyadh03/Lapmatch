@@ -4,7 +4,10 @@ import PcCard from '../components/PcCard';
 //j'affiche toujours MOCK_PCS !!!!!!!!!!!!!!!!
 //search type simple avancé ou par nom 
 export default function ResultsScreen({ route, navigation }) {
-  const { searchData } = route.params;
+  const { results } = route.params || {};
+  const laptops = results?.data || results?.laptops || results || [];
+  
+  console.log("[ResultsScreen] Données reçues:", laptops?.length || 0, "laptops");
 
   return (
     <SafeAreaView style={styles.container}>
@@ -13,12 +16,12 @@ export default function ResultsScreen({ route, navigation }) {
       
       <View style={styles.listContainer}>
         <Text style={styles.headerText}>
-          4 laptops found
+          {laptops.length} laptop{laptops.length !== 1 ? 's' : ''} found
         </Text>
 
         <FlatList
-          data={MOCK_PCS}
-          keyExtractor={(item) => item.id.toString()}
+          data={laptops.length > 0 ? laptops : MOCK_PCS}
+          keyExtractor={(item, index) => item.id?.toString() || item.laptop_id?.toString() || index.toString()}
           renderItem={({ item }) => (
             <PcCard
               pc={item}

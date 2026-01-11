@@ -23,12 +23,19 @@ def get_non_expert_recommendations(
     limit: int = Query(7, ge=1, le=20),
     user=Depends(get_current_user)   # 🔐 AJOUT ICI
 ):
+    import time
+    start_time = time.time()
+    print(f"[BACKEND] 📥 Requête reçue - /recommendations/non-expert")
+    print(f"[BACKEND] 📋 Paramètres: usage={usage_name}, price={max_price}, rating={min_rating}, storage={storage_gb}")
+    
     if usage_name not in ALLOWED_USAGES:
         raise HTTPException(
             status_code=400,
             detail=f"usage_name must be one of {ALLOWED_USAGES}"
         )
 
+    print(f"[BACKEND] 🔍 Appel de recommend_non_expert...")
+    query_start = time.time()
     laptops = recommend_non_expert(
         usage_name=usage_name,
         max_price=max_price,
@@ -37,8 +44,13 @@ def get_non_expert_recommendations(
         offset=offset,
         limit=limit
     )
-
-    return {"count": len(laptops), "laptops": laptops}
+    query_duration = time.time() - query_start
+    print(f"[BACKEND] ✅ Requête Neo4j terminée en {query_duration:.2f}s - {len(laptops)} résultats")
+    
+    total_duration = time.time() - start_time
+    print(f"[BACKEND] 🏁 Réponse envoyée en {total_duration:.2f}s total")
+    
+    return {"success": True, "data": laptops, "count": len(laptops)}
 
 # route pour user expert 
 @router.get("/expert")

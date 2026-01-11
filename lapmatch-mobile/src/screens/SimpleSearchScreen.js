@@ -134,11 +134,13 @@ export default function SimpleSearchScreen({ navigation }) {
         "📦 [SimpleSearch] Données reçues:",
         data?.success ? "Succès" : "Échec",
         "- Nombre de résultats:",
-        data?.data?.length || 0
+        data?.data?.length || data?.laptops?.length || 0
       );
 
       // Navigation vers l'écran Results avec les données reçues
-      navigation.navigate("Results", { results: data });
+      // Support des deux formats: {success, data} ou {laptops}
+      const results = data?.data || data?.laptops || data || [];
+      navigation.navigate("Results", { results });
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(
@@ -196,8 +198,8 @@ export default function SimpleSearchScreen({ navigation }) {
         <Slider
           style={{ width: "100%", height: 40 }}
           minimumValue={500}
-          maximumValue={5000}
-          step={500}
+          maximumValue={50000}
+          step={100}
           minimumTrackTintColor="#4953DD"
           maximumTrackTintColor="#4A4A6A"
           thumbTintColor="#4953DD"

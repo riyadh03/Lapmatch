@@ -34,6 +34,9 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
+// Timeout pour les requêtes (75 secondes)
+const REQUEST_TIMEOUT = 30000;
+
 /**
  * Récupère le token Firebase de l'utilisateur connecté
  */
@@ -46,6 +49,33 @@ const getAuthToken = async () => {
   }
 
   return await user.getIdToken();
+};
+
+/**
+ * Crée une requête fetch avec timeout
+ */
+const fetchWithTimeout = async (url, options, timeout = REQUEST_TIMEOUT) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === "AbortError") {
+      throw new Error(
+        `La requête a expiré après ${timeout}ms. Le serveur met trop de temps à répondre.`
+      );
+    }
+    throw error;
+  }
 };
 
 /**
@@ -66,11 +96,19 @@ export const fetchNonExpertRecommendations = async (params) => {
     console.log("🌐 [API] URL complète:", url);
 
     const requestStartTime = Date.now();
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    console.log(
+      `⏳ [API] Envoi de la requête (timeout: ${REQUEST_TIMEOUT}ms)...`
+    );
+
+    const response = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+      REQUEST_TIMEOUT
+    );
 
     const requestDuration = Date.now() - requestStartTime;
     console.log(`⏱️ [API] Requête HTTP terminée en ${requestDuration}ms`);
@@ -102,6 +140,27 @@ export const fetchNonExpertRecommendations = async (params) => {
   } catch (error) {
     const totalDuration = Date.now() - startTime;
     console.error(`❌ [API] Erreur après ${totalDuration}ms:`, error.message);
+
+    // Gestion spécifique des erreurs réseau
+    if (
+      error.message.includes("Network request failed") ||
+      error.message.includes("expiré")
+    ) {
+      console.error("🌐 [API] Problème réseau détecté:");
+      console.error("  - Vérifiez votre connexion internet");
+      console.error("  - Vérifiez que ngrok est actif");
+      console.error("  - Vérifiez que le backend est démarré");
+      throw new Error(
+        "Problème de connexion réseau. Vérifiez votre connexion et que le serveur est accessible."
+      );
+    }
+
+    if (error.message.includes("expiré")) {
+      throw new Error(
+        "Le serveur met trop de temps à répondre. Veuillez réessayer."
+      );
+    }
+
     console.error("❌ [API] Stack trace:", error.stack);
     throw error;
   }
@@ -125,11 +184,19 @@ export const fetchExpertRecommendations = async (params) => {
     console.log("🌐 [API] URL complète:", url);
 
     const requestStartTime = Date.now();
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    console.log(
+      `⏳ [API] Envoi de la requête (timeout: ${REQUEST_TIMEOUT}ms)...`
+    );
+
+    const response = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+      REQUEST_TIMEOUT
+    );
 
     const requestDuration = Date.now() - requestStartTime;
     console.log(`⏱️ [API] Requête HTTP terminée en ${requestDuration}ms`);
@@ -162,6 +229,27 @@ export const fetchExpertRecommendations = async (params) => {
   } catch (error) {
     const totalDuration = Date.now() - startTime;
     console.error(`❌ [API] Erreur après ${totalDuration}ms:`, error.message);
+
+    // Gestion spécifique des erreurs réseau
+    if (
+      error.message.includes("Network request failed") ||
+      error.message.includes("expiré")
+    ) {
+      console.error("🌐 [API] Problème réseau détecté:");
+      console.error("  - Vérifiez votre connexion internet");
+      console.error("  - Vérifiez que ngrok est actif");
+      console.error("  - Vérifiez que le backend est démarré");
+      throw new Error(
+        "Problème de connexion réseau. Vérifiez votre connexion et que le serveur est accessible."
+      );
+    }
+
+    if (error.message.includes("expiré")) {
+      throw new Error(
+        "Le serveur met trop de temps à répondre. Veuillez réessayer."
+      );
+    }
+
     console.error("❌ [API] Stack trace:", error.stack);
     throw error;
   }

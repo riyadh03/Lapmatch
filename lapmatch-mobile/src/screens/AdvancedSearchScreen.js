@@ -180,9 +180,9 @@ export default function AdvancedSearchScreen({ navigation }) {
         <Text style={styles.valueText}>{budget} dh</Text>
         <Slider
           style={{ width: "100%", height: 40 }}
-          minimumValue={2000}
-          maximumValue={40000}
-          step={500}
+          minimumValue={500}
+          maximumValue={50000}
+          step={100}
           minimumTrackTintColor="#4953DD"
           thumbTintColor="#4953DD"
           value={budget}
