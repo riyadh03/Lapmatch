@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
 import AppButton from "../components/AppButton";
-import AppInput from "../components/AppInput";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import { signupUser } from "../services/authService";
 
 export default function SignupScreen({ navigation }) {
@@ -12,20 +11,56 @@ export default function SignupScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  // 🔹 États pour les erreurs
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [generalError, setGeneralError] = useState("");
+
   // 🔹 Signup handler
   const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) {
-      console.log("All fields are required");
-      return;
+    // Réinitialiser les erreurs
+    setEmailError("");
+    setPasswordError("");
+    setConfirmPasswordError("");
+    setGeneralError("");
+
+    let hasError = false;
+
+    // Validation email
+    if (!email || !email.trim()) {
+      setEmailError("Email requis");
+      hasError = true;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        setEmailError("Format d'email invalide");
+        hasError = true;
+      }
     }
 
-    if (password !== confirmPassword) {
-      console.log("Passwords do not match");
-      return;
+    // Validation password
+    if (!password || !password.trim()) {
+      setPasswordError("Mot de passe requis");
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
+      hasError = true;
     }
+
+    // Validation confirm password
+    if (!confirmPassword || !confirmPassword.trim()) {
+      setConfirmPasswordError("Veuillez confirmer votre mot de passe");
+      hasError = true;
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError("Les mots de passe ne correspondent pas");
+      hasError = true;
+    }
+
+    if (hasError) return;
 
     try {
-      const userCredential = await signupUser(email, password);
+      const userCredential = await signupUser(email.trim(), password);
       console.log("Signup successful");
       console.log("UID:", userCredential.user.uid);
 
@@ -35,7 +70,18 @@ export default function SignupScreen({ navigation }) {
       navigation.navigate("Home");
     } catch (error) {
       console.log("Signup error:", error.message);
-      Alert.alert("Signup error", error.message || String(error));
+
+      // Gérer les erreurs Firebase spécifiques
+      const errorCode = error.code || "";
+      if (errorCode === "auth/email-already-in-use") {
+        setEmailError("Cet email est déjà utilisé");
+      } else if (errorCode === "auth/invalid-email") {
+        setEmailError("Format d'email invalide");
+      } else if (errorCode === "auth/weak-password") {
+        setPasswordError("Le mot de passe est trop faible");
+      } else {
+        setGeneralError(error.message || "Une erreur est survenue");
+      }
     }
   };
 
@@ -48,32 +94,145 @@ export default function SignupScreen({ navigation }) {
       <Text style={styles.title}>Create Account</Text>
       <Text style={styles.subtitle}>Join LaptopFinder today</Text>
 
-      <AppInput
-        placeholder="Full Name"
-        value={fullName}
-        onChangeText={setFullName}
-      />
+      <View>
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#A0A0BC"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+        </View>
+      </View>
 
-      <AppInput
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+      <View>
+        <View
+          style={[
+            styles.inputContainer,
+            emailError && styles.inputContainerError,
+          ]}
+        >
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#A0A0BC"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={(text) => {
+              setEmail(text);
+              if (emailError) setEmailError("");
+            }}
+          />
+          {emailError ? (
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={20}
+              color="#FF4444"
+              style={styles.errorIcon}
+            />
+          ) : null}
+        </View>
+        {emailError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{emailError}</Text>
+          </View>
+        ) : null}
+      </View>
 
-      <AppInput
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View>
+        <View
+          style={[
+            styles.inputContainer,
+            passwordError && styles.inputContainerError,
+          ]}
+        >
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#A0A0BC"
+            secureTextEntry
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              if (passwordError) setPasswordError("");
+              // Réinitialiser l'erreur de confirmation si on change le password
+              if (confirmPasswordError && text === confirmPassword) {
+                setConfirmPasswordError("");
+              }
+            }}
+          />
+          {passwordError ? (
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={20}
+              color="#FF4444"
+              style={styles.errorIcon}
+            />
+          ) : null}
+        </View>
+        {passwordError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{passwordError}</Text>
+          </View>
+        ) : null}
+      </View>
 
-      <AppInput
-        placeholder="Confirm Password"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
+      <View>
+        <View
+          style={[
+            styles.inputContainer,
+            confirmPasswordError && styles.inputContainerError,
+          ]}
+        >
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor="#A0A0BC"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              if (confirmPasswordError) {
+                if (text === password) {
+                  setConfirmPasswordError("");
+                } else if (text.length > 0) {
+                  setConfirmPasswordError(
+                    "Les mots de passe ne correspondent pas"
+                  );
+                } else {
+                  setConfirmPasswordError("");
+                }
+              }
+            }}
+          />
+          {confirmPasswordError ? (
+            <MaterialCommunityIcons
+              name="alert-circle"
+              size={20}
+              color="#FF4444"
+              style={styles.errorIcon}
+            />
+          ) : null}
+        </View>
+        {confirmPasswordError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{confirmPasswordError}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {generalError ? (
+        <View style={styles.generalErrorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle"
+            size={20}
+            color="#FF4444"
+          />
+          <Text style={styles.generalErrorText}>{generalError}</Text>
+        </View>
+      ) : null}
 
       <AppButton title="Create Account" onPress={handleSignup} />
 
@@ -132,5 +291,55 @@ const styles = StyleSheet.create({
     color: "#4953DD",
     fontWeight: "bold",
     marginLeft: 5,
+  },
+  inputContainer: {
+    backgroundColor: "#1E1E3F",
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginVertical: 8,
+    borderWidth: 1,
+    borderColor: "#4A4A6A",
+    height: 50,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inputContainerError: {
+    borderColor: "#FF4444",
+    borderWidth: 1.5,
+  },
+  input: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    flex: 1,
+  },
+  errorIcon: {
+    marginLeft: 10,
+  },
+  errorContainer: {
+    marginTop: -4,
+    marginBottom: 4,
+    marginLeft: 4,
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 12,
+    marginTop: 2,
+  },
+  generalErrorContainer: {
+    backgroundColor: "#2D1E1E",
+    borderColor: "#FF4444",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  generalErrorText: {
+    color: "#FF4444",
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
   },
 });
