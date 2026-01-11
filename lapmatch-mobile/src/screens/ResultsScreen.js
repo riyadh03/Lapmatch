@@ -1,10 +1,31 @@
 import { View, Text, FlatList, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { useState, useEffect } from 'react';
 import PcCard from '../components/PcCard';
+import { favoritesService } from '../services/favoritesService';
 //peu importe le type de recherche
 //j'affiche toujours MOCK_PCS !!!!!!!!!!!!!!!!
 //search type simple avancé ou par nom 
 export default function ResultsScreen({ route, navigation }) {
   const { searchData } = route.params;
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    const favs = await favoritesService.getFavorites();
+    setFavorites(favs);
+  };
+
+  const handleFavoriteChange = async (pc, isFav) => {
+    // Recharger les favoris après un changement
+    await loadFavorites();
+  };
+
+  const isFavorite = (pcId) => {
+    return favorites.some(fav => fav.id === pcId);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,6 +46,8 @@ export default function ResultsScreen({ route, navigation }) {
               onPress={() =>
                 navigation.navigate('PcDetails', { pc: item })
               }
+              isFavoriteInitial={isFavorite(item.id)}
+              onFavoriteChange={handleFavoriteChange}
             />
           )}
         />

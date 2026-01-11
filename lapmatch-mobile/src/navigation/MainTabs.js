@@ -14,8 +14,14 @@ export default function MainTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ color, size }) => {
-          const iconName =
-            route.name === 'HomeTab' ? 'home' : 'log-out';
+          let iconName;
+          if (route.name === 'HomeTab') {
+            iconName = 'home';
+          } else if (route.name === 'Favoris') {
+            iconName = 'heart';
+          } else {
+            iconName = 'log-out';
+          }
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },

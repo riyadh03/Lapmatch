@@ -1,14 +1,25 @@
 // PcCard.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AppButton from './AppButton';
+import { favoritesService } from '../services/favoritesService';
 
-const PcCard = ({ pc, onPress }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+const PcCard = ({ pc, onPress, isFavoriteInitial = false, onFavoriteChange }) => {
+  const [isFavorite, setIsFavorite] = useState(isFavoriteInitial);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  useEffect(() => {
+    setIsFavorite(isFavoriteInitial);
+  }, [isFavoriteInitial]);
+
+  const toggleFavorite = async () => {
+    const newFavoriteState = await favoritesService.toggleFavorite(pc);
+    setIsFavorite(newFavoriteState);
+    
+    // Notifier le composant parent du changement
+    if (onFavoriteChange) {
+      onFavoriteChange(pc, newFavoriteState);
+    }
   };
 
   return (
