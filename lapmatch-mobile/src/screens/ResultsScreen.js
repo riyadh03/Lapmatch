@@ -1,10 +1,36 @@
 import { View, Text, FlatList, StyleSheet, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useState } from "react";
 import PcCard from "../components/PcCard";
+import { favoritesService } from "../services/favoritesService";
 
 export default function ResultsScreen({ route, navigation }) {
   const { results } = route.params || {};
   const laptops = results?.data || results?.laptops || results || [];
+
+  const [favorites, setFavorites] = useState([]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadFavorites();
+    });
+    loadFavorites();
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadFavorites = async () => {
+    const favs = await favoritesService.getFavorites();
+    setFavorites(favs);
+  };
+
+  const isFavorite = (pc) => {
+    const id = pc?.id ?? pc?.laptop_id;
+    return favorites.some((fav) => (fav?.id ?? fav?.laptop_id) === id);
+  };
+
+  const handleFavoriteChange = async () => {
+    await loadFavorites();
+  };
 
   console.log(
     "[ResultsScreen] Données reçues:",
@@ -32,6 +58,8 @@ export default function ResultsScreen({ route, navigation }) {
             <PcCard
               pc={item}
               onPress={() => navigation.navigate("PcDetails", { pc: item })}
+              isFavoriteInitial={isFavorite(item)}
+              onFavoriteChange={handleFavoriteChange}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -62,33 +90,3 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 });
-
-const MOCK_PCS = [
-  {
-    id: 1,
-    name: "ASUS TUF Gaming",
-    price: 9500,
-    image:
-      "https://images.unsplash.com/photo-1640955014216-75201056c829?q=80&w=1032&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    description: "PC gaming performant",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
-  },
-  {
-    id: 2,
-    name: "HP Pavilion",
-    price: 7800,
-    image:
-      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    description: "Idéal pour études et bureautique",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
-  },
-  {
-    id: 3,
-    name: "Dell Inspiron",
-    price: 8200,
-    image:
-      "https://images.unsplash.com/photo-1592919933511-ea9d487c85e4?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    description: "Bon pour développement",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
-  },
-];

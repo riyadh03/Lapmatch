@@ -1,5 +1,5 @@
 // PcCard.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,22 @@ import {
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { favoritesService } from "../services/favoritesService";
 
-const PcCard = ({ pc, onPress }) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+const PcCard = ({ pc, onPress, isFavoriteInitial = false, onFavoriteChange, style }) => {
+  const [isFavorite, setIsFavorite] = useState(isFavoriteInitial);
 
-  const toggleFavorite = (e) => {
-    e.stopPropagation(); // Empêcher le déclenchement de onPress
-    setIsFavorite(!isFavorite);
+  useEffect(() => {
+    setIsFavorite(isFavoriteInitial);
+  }, [isFavoriteInitial]);
+
+  const toggleFavorite = async () => {
+    const newFavoriteState = await favoritesService.toggleFavorite(pc);
+    setIsFavorite(newFavoriteState);
+
+    if (onFavoriteChange) {
+      onFavoriteChange(pc, newFavoriteState);
+    }
   };
 
   // Fonction pour tronquer le nom si trop long
@@ -56,7 +65,7 @@ const PcCard = ({ pc, onPress }) => {
   };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.7}>
       {/* Image du PC */}
       <Image
         source={{
