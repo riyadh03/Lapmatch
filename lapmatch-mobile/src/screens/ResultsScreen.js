@@ -1,31 +1,37 @@
-import { View, Text, FlatList, StyleSheet, StatusBar } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import PcCard from '../components/PcCard';
+import { View, Text, FlatList, StyleSheet, StatusBar } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import PcCard from "../components/PcCard";
 
 export default function ResultsScreen({ route, navigation }) {
   const { results } = route.params || {};
   const laptops = results?.data || results?.laptops || results || [];
-  
-  console.log("[ResultsScreen] Données reçues:", laptops?.length || 0, "laptops");
+
+  console.log(
+    "[ResultsScreen] Données reçues:",
+    laptops?.length || 0,
+    "laptops"
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <StatusBar barStyle="light-content" />
-      
+
       <View style={styles.listContainer}>
         <Text style={styles.headerText}>
-          {laptops.length} laptop{laptops.length !== 1 ? 's' : ''} found
+          {laptops.length} laptop{laptops.length !== 1 ? "s" : ""} found
         </Text>
 
         <FlatList
           data={laptops.length > 0 ? laptops : []}
-          keyExtractor={(item, index) => item.id?.toString() || item.laptop_id?.toString() || index.toString()}
+          keyExtractor={(item, index) =>
+            item.id?.toString() ||
+            item.laptop_id?.toString() ||
+            index.toString()
+          }
           renderItem={({ item }) => (
             <PcCard
               pc={item}
-              onPress={() =>
-                navigation.navigate('PcDetails', { pc: item })
-              }
+              onPress={() => navigation.navigate("PcDetails", { pc: item })}
             />
           )}
           contentContainerStyle={styles.listContent}
@@ -39,7 +45,7 @@ export default function ResultsScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#12122C',
+    backgroundColor: "#12122C",
   },
   listContainer: {
     flex: 1,
@@ -51,9 +57,9 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 16,
-    color: '#A0A0BC',
+    color: "#A0A0BC",
     marginBottom: 15,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
 
@@ -62,25 +68,27 @@ const MOCK_PCS = [
     id: 1,
     name: "ASUS TUF Gaming",
     price: 9500,
-    image: "https://images.unsplash.com/photo-1640955014216-75201056c829?q=80&w=1032&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://images.unsplash.com/photo-1640955014216-75201056c829?q=80&w=1032&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "PC gaming performant",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/"
-
+    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
   },
   {
     id: 2,
     name: "HP Pavilion",
     price: 7800,
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "Idéal pour études et bureautique",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/"
+    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
   },
   {
     id: 3,
     name: "Dell Inspiron",
     price: 8200,
-    image: "https://images.unsplash.com/photo-1592919933511-ea9d487c85e4?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://images.unsplash.com/photo-1592919933511-ea9d487c85e4?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     description: "Bon pour développement",
-    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/"
-  }
+    link: "https://www.asus.com/Laptops/For-Gaming/TUF-Gaming/",
+  },
 ];
