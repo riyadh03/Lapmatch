@@ -2,19 +2,19 @@
 from app.db.neo4j import get_driver
 import os
 
-def create_user(uid: str, email: str):
+def create_user(uid: str, email: str, user_type: str = "User"):
     """
     Crée un noeud utilisateur dans Neo4j si inexistant.
-    Pas de rôle pour le moment.
+    user_type peut être "User" ou "Admin"
     """
     query = """
     MERGE (u:User {uid: $uid})
-    ON CREATE SET u.email = $email
-    RETURN u
+    ON CREATE SET u.email = $email, u.user_type = $user_type
+    RETURN u    
     """
     driver = get_driver()
     with driver.session(database=os.getenv("NEO4J_DATABASE")) as session:
-        result = session.run(query, uid=uid, email=email)
+        result = session.run(query, uid=uid, email=email, user_type=user_type)
         return result.single()["u"]
 
 def get_user_by_uid(uid: str):

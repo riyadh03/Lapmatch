@@ -87,10 +87,14 @@ export default function SignupScreen({ navigation }) {
         <Text style={styles.loginText}>
           Already have an account?
         </Text>
+<<<<<<< HEAD
         <Text
           style={styles.loginLink}
           onPress={() => navigation.navigate('Login')}
         >
+=======
+        <Text style={styles.loginLink} onPress={() => navigation.goBack('Login')}>
+>>>>>>> a9fc88601769287b9a44bf2f41833c13b9126f39
           Sign In
         </Text>
       </View>
