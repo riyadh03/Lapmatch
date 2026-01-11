@@ -38,6 +38,13 @@ export default function SimpleSearchScreen({ navigation }) {
     "2TB": 2048,
   };
 
+  const storageOptions = [
+    { label: "256GB", value: "256GB" },
+    { label: "512GB", value: "512GB" },
+    { label: "1TB", value: "1TB" },
+    { label: "2TB", value: "2TB" },
+  ];
+
   const USAGE_MAP = {
     Gaming: "GAMING",
     Development: "DEVELOPPEMENT",
