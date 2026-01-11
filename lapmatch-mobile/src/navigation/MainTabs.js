@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 import AppStack from './AppStack';
 import LogoutScreen from '../screens/LogoutScreen';
+import FavorisScreen from '../screens/FavorisScreen';
+
 
 const Tab = createBottomTabNavigator();
 
@@ -27,10 +29,16 @@ export default function MainTabs() {
         component={AppStack}
         options={{ title: 'Home' }}
       />
+       <Tab.Screen
+        name="Favoris"
+        component={FavorisScreen}
+        options={{ title: 'Favoris' }}
+      />
       <Tab.Screen
         name="Logout"
         component={LogoutScreen}
       />
+     
     </Tab.Navigator>
   );
 }
