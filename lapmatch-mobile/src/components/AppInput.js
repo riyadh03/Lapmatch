@@ -4,9 +4,9 @@ import { View, TextInput, StyleSheet } from 'react-native';
 // Note : Les icônes devront être ajoutées manuellement si vous installez une bibliothèque d'icônes
 // Exemple : import { User, Mail, Lock } from 'lucide-react-native'; 
 
-export default function AppInput({ placeholder, secureTextEntry, keyboardType, icon: IconComponent }) {
+export default function AppInput({ placeholder, secureTextEntry, keyboardType, icon: IconComponent, value, onChangeText, style, ...rest }) {
   return (
-    <View style={styles.inputContainer}>
+    <View style={[styles.inputContainer, style]}>
       {/* {IconComponent && <IconComponent style={styles.icon} size={20} />} */}
       <TextInput 
         style={styles.input}
@@ -14,6 +14,9 @@ export default function AppInput({ placeholder, secureTextEntry, keyboardType, i
         placeholderTextColor="#A0A0BC"
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
+        value={value}
+        onChangeText={onChangeText}
+        {...rest}
       />
     </View>
   );
