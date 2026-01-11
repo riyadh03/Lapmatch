@@ -1,36 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
-import AppButton from '../components/AppButton';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
+import AppButton from "../components/AppButton";
 import { fetchNonExpertRecommendations } from "../services/api";
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // --- Composant interne pour les cartes "Usage" ---
 const UsageCard = ({ title, isActive, onPress, iconName }) => (
-  <TouchableOpacity 
-    style={[styles.usageCard, isActive && styles.usageCardActive]} 
+  <TouchableOpacity
+    style={[styles.usageCard, isActive && styles.usageCardActive]}
     onPress={onPress}
   >
     <View style={styles.iconPlaceholder}>
-      <MaterialCommunityIcons 
+      <MaterialCommunityIcons
         name={iconName}
-        size={24} 
-        color={isActive ? '#fff' : '#4953DD'} 
+        size={24}
+        color={isActive ? "#fff" : "#4953DD"}
       />
     </View>
-    <Text style={[styles.usageText, isActive && styles.usageTextActive]}>{title}</Text>
+    <Text style={[styles.usageText, isActive && styles.usageTextActive]}>
+      {title}
+    </Text>
   </TouchableOpacity>
 );
 
 export default function SimpleSearchScreen({ navigation }) {
-  const [usage, setUsage] = useState('Development'); 
-  const [storage, setStorage] = useState(''); 
-  const [budget, setBudget] = useState(1500); 
-  const [rating, setRating] = useState(4.0); 
+  const [usage, setUsage] = useState("Development");
+  const [storage, setStorage] = useState("");
+  const [budget, setBudget] = useState(1500);
+  const [rating, setRating] = useState(4.0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  
   const STORAGE_MAP = {
     "256GB": 256,
     "512GB": 512,
@@ -51,14 +63,14 @@ export default function SimpleSearchScreen({ navigation }) {
     Design: "GRAPHISME",
     Personal: "ETUDES",
   };
-  
+
   useEffect(() => {
     const loadFilters = async () => {
       try {
-        const savedUsage = await AsyncStorage.getItem('simpleSearchUsage');
-        const savedStorage = await AsyncStorage.getItem('simpleSearchStorage');
-        const savedBudget = await AsyncStorage.getItem('simpleSearchBudget');
-        const savedRating = await AsyncStorage.getItem('simpleSearchRating');
+        const savedUsage = await AsyncStorage.getItem("simpleSearchUsage");
+        const savedStorage = await AsyncStorage.getItem("simpleSearchStorage");
+        const savedBudget = await AsyncStorage.getItem("simpleSearchBudget");
+        const savedRating = await AsyncStorage.getItem("simpleSearchRating");
 
         if (savedUsage) setUsage(savedUsage);
         if (savedStorage) setStorage(savedStorage);
@@ -75,10 +87,10 @@ export default function SimpleSearchScreen({ navigation }) {
   useEffect(() => {
     const saveFilters = async () => {
       try {
-        await AsyncStorage.setItem('simpleSearchUsage', usage);
-        await AsyncStorage.setItem('simpleSearchStorage', storage);
-        await AsyncStorage.setItem('simpleSearchBudget', budget.toString());
-        await AsyncStorage.setItem('simpleSearchRating', rating.toString());
+        await AsyncStorage.setItem("simpleSearchUsage", usage);
+        await AsyncStorage.setItem("simpleSearchStorage", storage);
+        await AsyncStorage.setItem("simpleSearchBudget", budget.toString());
+        await AsyncStorage.setItem("simpleSearchRating", rating.toString());
       } catch (err) {
         console.error("Erreur sauvegarde filtres:", err);
       }
@@ -87,57 +99,92 @@ export default function SimpleSearchScreen({ navigation }) {
     saveFilters();
   }, [usage, storage, budget, rating]);
 
-
   const handleSearch = async () => {
+    // Empêcher les requêtes multiples
+    if (isLoading) {
+      console.log("⚠️ Requête déjà en cours, ignore le clic");
+      return;
+    }
+
+    // Réinitialiser l'erreur
+    setError("");
+    setIsLoading(true);
+
+    const searchParams = {
+      usage_name: USAGE_MAP[usage], // ex: "GAMING", "ETUDES"
+      max_price: budget,
+      min_rating: rating,
+      storage_gb: STORAGE_MAP[storage] || 0, // ex: "512GB"
+      offset: 0,
+      limit: 7,
+    };
+
+    console.log(
+      "🔍 [SimpleSearch] Début de la recherche avec params:",
+      searchParams
+    );
+    const startTime = Date.now();
+
     try {
-      const data = await fetchNonExpertRecommendations({
-        usage_name: USAGE_MAP[usage],   // ex: "GAMING", "ETUDES"
-        max_price: budget,
-        min_rating: rating,
-        storage_gb: STORAGE_MAP[storage] || 0,               // ex: "512GB"
-        offset: 0,
-        limit: 7,
-      });
+      const data = await fetchNonExpertRecommendations(searchParams);
+      const duration = Date.now() - startTime;
+
+      console.log("✅ [SimpleSearch] Recherche réussie en", duration, "ms");
+      console.log(
+        "📦 [SimpleSearch] Données reçues:",
+        data?.success ? "Succès" : "Échec",
+        "- Nombre de résultats:",
+        data?.data?.length || 0
+      );
 
       // Navigation vers l'écran Results avec les données reçues
       navigation.navigate("Results", { results: data });
     } catch (error) {
-      console.error("Erreur lors de la recherche:", error.message);
+      const duration = Date.now() - startTime;
+      console.error(
+        "❌ [SimpleSearch] Erreur après",
+        duration,
+        "ms:",
+        error.message
+      );
+      console.error("❌ [SimpleSearch] Détails de l'erreur:", error);
+      setError(error.message || "Une erreur est survenue lors de la recherche");
+    } finally {
+      setIsLoading(false);
+      console.log("🏁 [SimpleSearch] Requête terminée");
     }
   };
 
-
   return (
     <ScrollView style={styles.container}>
-      
       {/* Section Usage */}
       <View>
         <View style={styles.cardRow}>
-          <UsageCard 
+          <UsageCard
             title="Développement"
             iconName="code-tags"
-            isActive={usage === 'Development'}
-            onPress={() => setUsage('Development')}
+            isActive={usage === "Development"}
+            onPress={() => setUsage("Development")}
           />
-          <UsageCard 
+          <UsageCard
             title="Graphisme"
             iconName="palette"
-            isActive={usage === 'Design'}
-            onPress={() => setUsage('Design')}
+            isActive={usage === "Design"}
+            onPress={() => setUsage("Design")}
           />
         </View>
         <View style={styles.cardRow}>
-          <UsageCard 
+          <UsageCard
             title="Gaming"
             iconName="gamepad-variant"
-            isActive={usage === 'Gaming'}
-            onPress={() => setUsage('Gaming')}
+            isActive={usage === "Gaming"}
+            onPress={() => setUsage("Gaming")}
           />
-          <UsageCard 
+          <UsageCard
             title="Personnel/Etudes"
             iconName="account"
-            isActive={usage === 'Personal'}
-            onPress={() => setUsage('Personal')}
+            isActive={usage === "Personal"}
+            onPress={() => setUsage("Personal")}
           />
         </View>
       </View>
@@ -147,7 +194,7 @@ export default function SimpleSearchScreen({ navigation }) {
       <View style={styles.sliderContainer}>
         <Text style={styles.budgetValue}>{budget} dh</Text>
         <Slider
-          style={{ width: '100%', height: 40 }}
+          style={{ width: "100%", height: 40 }}
           minimumValue={500}
           maximumValue={5000}
           step={500}
@@ -165,18 +212,16 @@ export default function SimpleSearchScreen({ navigation }) {
 
       {/* Section Storage */}
       <Text style={styles.label}>Minimum Storage</Text>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.pickerInput}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={{ color: storage ? '#fff' : '#A0A0BC' }}>
-          {storage ? storageOptions.find(opt => opt.value === storage)?.label : 'Select storage'}
+        <Text style={{ color: storage ? "#fff" : "#A0A0BC" }}>
+          {storage
+            ? storageOptions.find((opt) => opt.value === storage)?.label
+            : "Select storage"}
         </Text>
-        <MaterialCommunityIcons 
-          name="chevron-down" 
-          size={24} 
-          color="#A0A0BC" 
-        />
+        <MaterialCommunityIcons name="chevron-down" size={24} color="#A0A0BC" />
       </TouchableOpacity>
 
       {/* Modal pour le storage */}
@@ -218,7 +263,7 @@ export default function SimpleSearchScreen({ navigation }) {
       <View style={styles.sliderContainer}>
         <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
         <Slider
-          style={{ width: '100%', height: 40 }}
+          style={{ width: "100%", height: 40 }}
           minimumValue={3.0}
           maximumValue={5.0}
           step={0.1}
@@ -234,9 +279,28 @@ export default function SimpleSearchScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Message d'erreur */}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle"
+            size={20}
+            color="#FF4444"
+          />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
       {/* Bouton Recherche */}
       <View style={styles.buttonContainer}>
-        <AppButton title="Find Laptops" onPress={handleSearch} />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#4953DD" />
+            <Text style={styles.loadingText}>Recherche en cours...</Text>
+          </View>
+        ) : (
+          <AppButton title="Find Laptops" onPress={handleSearch} />
+        )}
       </View>
     </ScrollView>
   );
@@ -246,114 +310,147 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     flex: 1,
-    backgroundColor: '#12122C',
+    backgroundColor: "#12122C",
   },
   cardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 15,
     marginTop: 15,
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginTop: 30,
     marginBottom: 10,
   },
   usageCard: {
-    backgroundColor: '#1E1E3F',
+    backgroundColor: "#1E1E3F",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   usageCardActive: {
-    backgroundColor: '#4953DD',
+    backgroundColor: "#4953DD",
   },
   iconPlaceholder: {
     marginBottom: 10,
   },
   usageText: {
-    color: '#A0A0BC',
+    color: "#A0A0BC",
     fontSize: 12,
   },
   usageTextActive: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
   pickerInput: {
-    backgroundColor: '#1E1E3F',
-    color: '#fff',
+    backgroundColor: "#1E1E3F",
+    color: "#fff",
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#4A4A6A',
+    borderColor: "#4A4A6A",
     fontSize: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   sliderContainer: {
-    backgroundColor: '#1E1E3F',
+    backgroundColor: "#1E1E3F",
     borderRadius: 8,
     padding: 10,
     borderWidth: 1,
-    borderColor: '#4A4A6A',
+    borderColor: "#4A4A6A",
     marginBottom: 10,
   },
   budgetValue: {
-    color: '#4953DD',
+    color: "#4953DD",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   ratingValue: {
-    color: '#4953DD',
+    color: "#4953DD",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   rangeTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   rangeText: {
-    color: '#A0A0BC',
+    color: "#A0A0BC",
     fontSize: 12,
   },
   buttonContainer: {
     marginTop: 30,
     paddingBottom: 20,
   },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1E1E3F",
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4953DD",
+  },
+  loadingText: {
+    color: "#4953DD",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 10,
+  },
+  errorContainer: {
+    backgroundColor: "#2D1E1E",
+    borderColor: "#FF4444",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
   modalOverlay: {
     flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: '#1E1E3F',
+    backgroundColor: "#1E1E3F",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
-    maxHeight: '50%',
+    maxHeight: "50%",
   },
   modalItem: {
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#4A4A6A',
+    borderBottomColor: "#4A4A6A",
   },
   modalItemText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
   },
   modalCloseButton: {
     padding: 15,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   modalCloseText: {
-    color: '#4953DD',
+    color: "#4953DD",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });

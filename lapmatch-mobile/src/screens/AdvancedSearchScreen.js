@@ -7,6 +7,7 @@ import {
   Modal,
   FlatList,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -19,6 +20,8 @@ export default function AdvancedSearchScreen({ navigation }) {
   const [cpu, setCpu] = useState("");
   const [ram, setRam] = useState(16);
   const [budget, setBudget] = useState(15000);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -75,25 +78,63 @@ export default function AdvancedSearchScreen({ navigation }) {
   const ramOptions = [8, 16, 32, 64];
 
   const handleAdvancedSearch = async () => {
+    // Empêcher les requêtes multiples
+    if (isLoading) {
+      console.log("⚠️ Requête déjà en cours, ignore le clic");
+      return;
+    }
+
+    // Réinitialiser l'erreur
+    setError("");
+    setIsLoading(true);
+
+    const searchParams = {
+      cpu_type: normalizeCpu(cpu),
+      gpu_type: "", // optionnel
+      ram_gb: ram,
+      storage_gb: 512,
+      budget: budget,
+      screen_size: 15,
+      weight: 3,
+      eco_level: null,
+      offset: 0,
+      limit: 7,
+    };
+
+    console.log(
+      "🔍 [AdvancedSearch] Début de la recherche avec params:",
+      searchParams
+    );
+    const startTime = Date.now();
+
     try {
-      const data = await fetchExpertRecommendations({
-        cpu_type: normalizeCpu(cpu),
-        gpu_type: "", // optionnel
-        ram_gb: ram,
-        storage_gb: 512,
-        budget: budget,
-        screen_size: 15,
-        weight: 3,
-        eco_level: null,
-        offset: 0,
-        limit: 7,
-      });
+      const data = await fetchExpertRecommendations(searchParams);
+      const duration = Date.now() - startTime;
+
+      console.log("✅ [AdvancedSearch] Recherche réussie en", duration, "ms");
+      console.log(
+        "📦 [AdvancedSearch] Données reçues:",
+        data?.success ? "Succès" : "Échec",
+        "- Nombre de résultats:",
+        data?.laptops?.length || 0
+      );
 
       navigation.navigate("Results", {
-        results: data.laptops,
+        results: data.laptops || data.data || [],
       });
     } catch (error) {
-      console.error(error.message);
+      const duration = Date.now() - startTime;
+      console.error(
+        "❌ [AdvancedSearch] Erreur après",
+        duration,
+        "ms:",
+        error.message
+      );
+      console.error("❌ [AdvancedSearch] Détails de l'erreur:", error);
+      setError(error.message || "Une erreur est survenue lors de la recherche");
+    } finally {
+      setIsLoading(false);
+      console.log("🏁 [AdvancedSearch] Requête terminée");
     }
   };
 
@@ -153,8 +194,30 @@ export default function AdvancedSearchScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Message d'erreur */}
+      {error ? (
+        <View style={styles.errorContainer}>
+          <MaterialCommunityIcons
+            name="alert-circle"
+            size={20}
+            color="#FF4444"
+          />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.buttonContainer}>
-        <AppButton title="Voir les résultats" onPress={handleAdvancedSearch} />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#4953DD" />
+            <Text style={styles.loadingText}>Recherche en cours...</Text>
+          </View>
+        ) : (
+          <AppButton
+            title="Voir les résultats"
+            onPress={handleAdvancedSearch}
+          />
+        )}
       </View>
 
       {/* Modal Unique Dynamique */}
@@ -243,6 +306,39 @@ const styles = StyleSheet.create({
   rangeTextContainer: { flexDirection: "row", justifyContent: "space-between" },
   rangeText: { color: "#A0A0BC", fontSize: 12 },
   buttonContainer: { marginTop: 40 },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1E1E3F",
+    padding: 15,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4953DD",
+  },
+  loadingText: {
+    color: "#4953DD",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 10,
+  },
+  errorContainer: {
+    backgroundColor: "#2D1E1E",
+    borderColor: "#FF4444",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 10,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#FF4444",
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
