@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import AppButton from '../components/AppButton';
+import { fetchNonExpertRecommendations } from "../services/api";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Composant interne pour les cartes "Usage" ---
 const UsageCard = ({ title, isActive, onPress, iconName }) => (
@@ -27,20 +29,76 @@ export default function SimpleSearchScreen({ navigation }) {
   const [budget, setBudget] = useState(1500); 
   const [rating, setRating] = useState(4.0); 
   const [modalVisible, setModalVisible] = useState(false);
-  //!!should put the last values in async storage to keep them when user come back to this screen
 
-  const storageOptions = [
-    { label: '256 GB SSD', value: '256GB' },
-    { label: '512 GB SSD', value: '512GB' },
-    { label: '1 TB SSD', value: '1TB' },
-    { label: '2 TB SSD', value: '2TB' },
-  ];
-
-  const handleSearch = () => {
-    const searchData = { usage, storage, budget, rating };
-    console.log("Simple search:", searchData);
-    navigation.navigate('Results', {searchType: 'simple', searchData });
+  
+  const STORAGE_MAP = {
+    "256GB": 256,
+    "512GB": 512,
+    "1TB": 1024,
+    "2TB": 2048,
   };
+
+  const USAGE_MAP = {
+    Gaming: "GAMING",
+    Development: "DEVELOPPEMENT",
+    Design: "GRAPHISME",
+    Personal: "ETUDES",
+  };
+  
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const savedUsage = await AsyncStorage.getItem('simpleSearchUsage');
+        const savedStorage = await AsyncStorage.getItem('simpleSearchStorage');
+        const savedBudget = await AsyncStorage.getItem('simpleSearchBudget');
+        const savedRating = await AsyncStorage.getItem('simpleSearchRating');
+
+        if (savedUsage) setUsage(savedUsage);
+        if (savedStorage) setStorage(savedStorage);
+        if (savedBudget) setBudget(Number(savedBudget));
+        if (savedRating) setRating(Number(savedRating));
+      } catch (err) {
+        console.error("Erreur chargement filtres:", err);
+      }
+    };
+
+    loadFilters();
+  }, []);
+
+  useEffect(() => {
+    const saveFilters = async () => {
+      try {
+        await AsyncStorage.setItem('simpleSearchUsage', usage);
+        await AsyncStorage.setItem('simpleSearchStorage', storage);
+        await AsyncStorage.setItem('simpleSearchBudget', budget.toString());
+        await AsyncStorage.setItem('simpleSearchRating', rating.toString());
+      } catch (err) {
+        console.error("Erreur sauvegarde filtres:", err);
+      }
+    };
+
+    saveFilters();
+  }, [usage, storage, budget, rating]);
+
+
+  const handleSearch = async () => {
+    try {
+      const data = await fetchNonExpertRecommendations({
+        usage_name: USAGE_MAP[usage],   // ex: "GAMING", "ETUDES"
+        max_price: budget,
+        min_rating: rating,
+        storage_gb: STORAGE_MAP[storage] || 0,               // ex: "512GB"
+        offset: 0,
+        limit: 7,
+      });
+
+      // Navigation vers l'écran Results avec les données reçues
+      navigation.navigate("Results", { results: data });
+    } catch (error) {
+      console.error("Erreur lors de la recherche:", error.message);
+    }
+  };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -49,13 +107,13 @@ export default function SimpleSearchScreen({ navigation }) {
       <View>
         <View style={styles.cardRow}>
           <UsageCard 
-            title="Development"
+            title="Développement"
             iconName="code-tags"
             isActive={usage === 'Development'}
             onPress={() => setUsage('Development')}
           />
           <UsageCard 
-            title="Graphics & Design"
+            title="Graphisme"
             iconName="palette"
             isActive={usage === 'Design'}
             onPress={() => setUsage('Design')}
@@ -69,7 +127,7 @@ export default function SimpleSearchScreen({ navigation }) {
             onPress={() => setUsage('Gaming')}
           />
           <UsageCard 
-            title="Personal/Studies"
+            title="Personnel/Etudes"
             iconName="account"
             isActive={usage === 'Personal'}
             onPress={() => setUsage('Personal')}

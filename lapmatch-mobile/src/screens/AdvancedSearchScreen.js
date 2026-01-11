@@ -3,27 +3,95 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ScrollView }
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import AppButton from '../components/AppButton';
+import { fetchExpertRecommendations } from "../services/api";
+
 
 export default function AdvancedSearchScreen({ navigation }) {
   // États pour les filtres
-  const [ram, setRam] = useState('');
-  const [processor, setProcessor] = useState('');
-  const [brand, setBrand] = useState('');
-  const [budget, setBudget] = useState(10000);
-  
+  const [cpu, setCpu] = useState("");
+  const [ram, setRam] = useState(16);
+  const [budget, setBudget] = useState(15000);
+
+  useEffect(() => {
+  const loadFilters = async () => {
+    try {
+      const storedCpu = await AsyncStorage.getItem('advancedSearchCpu');
+      const storedRam = await AsyncStorage.getItem('advancedSearchRam');
+      const storedBudget = await AsyncStorage.getItem('advancedSearchBudget');
+
+      if (storedCpu) setCpu(storedCpu);
+      if (storedRam) setRam(Number(storedRam));
+      if (storedBudget) setBudget(Number(storedBudget));
+    } catch (error) {
+      console.error("Erreur lors du chargement des filtres", error);
+    }
+  };
+
+  useEffect(() => {
+    const saveFilters = async () => {
+      try {
+        await AsyncStorage.setItem('advancedSearchCpu', cpu);
+        await AsyncStorage.setItem('advancedSearchRam', ram.toString());
+        await AsyncStorage.setItem('advancedSearchBudget', budget.toString());
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde des filtres", error);
+      }
+    };
+    saveFilters();
+  }, [cpu, ram, budget]); // déclenche à chaque modification
+
+
+  loadFilters();
+}, []); // [] → seulement au montage du composant
+
+
   // États pour la visibilité des Modals
   const [activeModal, setActiveModal] = useState(null); // 'brand', 'cpu', ou 'ram'
 
   // Options de données
-  const brandOptions = ['Apple', 'Asus', 'HP', 'Dell', 'Lenovo', 'MSI', 'Acer', 'Razer'];
-  const cpuOptions = ['Intel Core i5', 'Intel Core i7', 'Intel Core i9', 'AMD Ryzen 5', 'AMD Ryzen 7', 'Apple M1/M2/M3'];
-  const ramOptions = ['4 GB', '8 GB', '16 GB', '32 GB', '64 GB'];
+  const cpuOptions = [
+    "Intel i5",
+    "Intel i7",
+    "Intel i9",
+    "Ryzen 3",
+    "Ryzen 5",
+    "Ryzen 7"
+  ];
 
-  const handleAdvancedSearch = () => {
-    const advancedData = { ram, processor, brand, budget };
-    console.log("Advanced search:", advancedData);
-    navigation.navigate('Results', { searchType: 'advanced', searchData: advancedData });
+  const normalizeCpu = (cpuLabel) => {
+    if (!cpuLabel) return "";
+    return cpuLabel
+      .toLowerCase()
+      .replace("intel ", "")
+      .replace("ryzen ", "ryzen ");
   };
+
+  const ramOptions = [8, 16, 32, 64];
+
+  const handleAdvancedSearch = async () => {
+    try {
+      const data = await fetchExpertRecommendations({
+        cpu_type: normalizeCpu(cpu),
+        gpu_type: "",        // optionnel
+        ram_gb: ram,
+        storage_gb: 512,
+        budget: budget,
+        screen_size: 15,
+        weight: 3,
+        eco_level: null,
+        offset: 0,
+        limit: 7,
+      });
+
+      navigation.navigate("Results", {
+        results: data.laptops,
+      });
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
+
+
 
   // Composant pour les champs de sélection
   const SelectInput = ({ label, value, placeholder, onPress }) => (
@@ -38,33 +106,27 @@ export default function AdvancedSearchScreen({ navigation }) {
     </View>
   );
 
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={styles.title}>Advanced Search</Text>
 
-      {/* Sélection de la Marque */}
-      <SelectInput 
-        label="Marque préférée" 
-        value={brand} 
-        placeholder="Choisir une marque" 
-        onPress={() => setActiveModal('brand')} 
-      />
-
       {/* Sélection du Processeur */}
       <SelectInput 
         label="Processeur" 
-        value={processor} 
+        value={cpu} 
         placeholder="Choisir un CPU" 
         onPress={() => setActiveModal('cpu')} 
       />
 
       {/* Sélection de la RAM (Nouveau) */}
       <SelectInput 
-        label="Mémoire RAM" 
-        value={ram} 
-        placeholder="Choisir la capacité" 
-        onPress={() => setActiveModal('ram')} 
+        label="Mémoire RAM"
+        value={`${ram} GB`}
+        placeholder="Choisir la capacité"
+        onPress={() => setActiveModal('ram')}
       />
+
 
       {/* Slider Budget */}
       <Text style={styles.label}>Budget Maximum</Text>
@@ -95,13 +157,12 @@ export default function AdvancedSearchScreen({ navigation }) {
         visible={activeModal !== null} 
         setVisible={() => setActiveModal(null)} 
         data={
-          activeModal === 'brand' ? brandOptions : 
+          activeModal === 'ram' ? ramOptions : 
           activeModal === 'cpu' ? cpuOptions : 
           ramOptions
         } 
         onSelect={(val) => {
-          if(activeModal === 'brand') setBrand(val);
-          if(activeModal === 'cpu') setProcessor(val);
+          if(activeModal === 'cpu') setCpu(val);
           if(activeModal === 'ram') setRam(val);
           setActiveModal(null);
         }}
@@ -119,10 +180,15 @@ const SelectionModal = ({ visible, setVisible, data, onSelect, title }) => (
         <Text style={styles.modalTitle}>{title}</Text>
         <FlatList
           data={data}
-          keyExtractor={(item) => item}
+          keyExtractor={(item) => item.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.modalItem} onPress={() => onSelect(item)}>
-              <Text style={styles.modalItemText}>{item}</Text>
+            <TouchableOpacity
+              style={styles.modalItem}
+              onPress={() => onSelect(item)}
+            >
+              <Text style={styles.modalItemText}>
+                {typeof item === "number" ? `${item} GB` : item}
+              </Text>
             </TouchableOpacity>
           )}
         />

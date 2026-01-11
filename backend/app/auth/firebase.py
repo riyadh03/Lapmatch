@@ -29,3 +29,18 @@ def verify_firebase_token(id_token: str):
     except Exception as e:
         print("Erreur Firebase:", e)
         return None
+
+
+# import os
+# import firebase_admin
+# from firebase_admin import auth, credentials
+# from app.services.user_service import create_user, get_user_by_uid
+
+# if not firebase_admin._apps:
+#     service_account_path = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+#     if service_account_path:
+#         cred = credentials.Certificate(service_account_path)
+#         firebase_admin.initialize_app(cred)
+#     else:
+#         print("Firebase non configuré, initialisation ignorée")
+        

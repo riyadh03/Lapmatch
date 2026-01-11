@@ -1,31 +1,59 @@
+// component for the pc card
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { AntDesign } from '@expo/vector-icons'; // Assuming you have expo vector icons installed
+import AppButton from './AppButton';
+import { Linking } from 'react-native';
 
 const PcCard = ({ pc, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Image source={{ uri: pc.image }} style={styles.image} resizeMode="cover" />
+      <Image
+        source={{
+          uri: pc.image_url || "https://via.placeholder.com/300x200",
+        }}
+        style={styles.image}
+        resizeMode="contain"
+      />
+
       <View style={styles.infoContainer}>
+        {/* Header : rating uniquement */}
         <View style={styles.headerRow}>
-          <Text style={styles.brandText}>{pc.brand}</Text>
-          <View style={styles.ratingContainer}>
-            <AntDesign name="star" size={14} color="#f1c40f" />
-            <Text style={styles.ratingText}>{pc.rating}</Text>
-          </View>
-        </View>
-        <Text style={styles.nameText}>{pc.name}</Text>
-        <View style={styles.footerRow}>
-            {/* Displaying price with a dollar sign as in the image mock */}
-            <Text style={styles.priceText}>{pc.price.toLocaleString()} dh</Text>
-            <View style={styles.viewButton}>
-                <Text style={styles.viewText}>View →</Text>
+          {pc.rating !== null && (
+            <View style={styles.ratingContainer}>
+              <AntDesign name="star" size={14} color="#f1c40f" />
+              <Text style={styles.ratingText}>{pc.rating}</Text>
             </View>
+          )}
+        </View>
+
+        {/* Nom */}
+        <Text style={styles.nameText}>{pc.name}</Text>
+
+        {/* Specs */}
+        {pc.cpu && <Text style={styles.specText}>CPU: {pc.cpu}</Text>}
+        {pc.gpu && <Text style={styles.specText}>GPU: {pc.gpu}</Text>}
+        {pc.ram_gb && <Text style={styles.specText}>RAM: {pc.ram_gb} GB</Text>}
+        {pc.storage_gb && <Text style={styles.specText}>Storage: {pc.storage_gb} GB</Text>}
+
+        {/* Footer */}
+        <View style={styles.footerRow}>
+          <Text style={styles.priceText}>
+            {pc.price?.toLocaleString()} MAD
+          </Text>
+
+          {pc.external_link && (
+            <AppButton
+              title="Acheter"
+              onPress={() => Linking.openURL(pc.external_link)}
+            />
+          )}
         </View>
       </View>
     </TouchableOpacity>
   );
 };
+
 
 const styles = StyleSheet.create({
   card: {
