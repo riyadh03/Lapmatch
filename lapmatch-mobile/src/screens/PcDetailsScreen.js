@@ -6,11 +6,79 @@ export default function PcDetailsScreen({ route, navigation }) {
   const { pc } = route.params;
   const insets = useSafeAreaInsets();
 
+  // Extraire la marque du premier mot du nom
+  const getBrand = (name) => {
+    if (!name) return "Marque inconnue";
+    const firstWord = name.trim().split(/\s+/)[0];
+    return firstWord || "Marque inconnue";
+  };
+
+  // Fonction pour formater le stockage
+  const formatStorage = (storageGb) => {
+    if (!storageGb) return "N/A";
+    if (storageGb >= 1024) {
+      return `${(storageGb / 1024).toFixed(1)} TB`;
+    }
+    return `${storageGb} GB`;
+  };
+
+  // Fonction pour afficher les étoiles de rating
+  const renderStars = (rating) => {
+    if (!rating || rating === null || rating === undefined) return null;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const stars = [];
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<AntDesign key={i} name="star" size={18} color="#f1c40f" />);
+    }
+    if (hasHalfStar) {
+      stars.push(<AntDesign key="half" name="star" size={18} color="#f1c40f" style={{ opacity: 0.5 }} />);
+    }
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(<AntDesign key={`empty-${i}`} name="staro" size={18} color="#f1c40f" />);
+    }
+    return stars;
+  };
+
+  // Construire les spécifications depuis les vraies données
   const specifications = [
-    { id: 1, name: 'CPU', value: 'Intel Core i9-13980HX', icon: 'server-outline', type: 'Ionicons' },
-    { id: 2, name: 'GPU', value: 'NVIDIA RTX 4070', icon: 'monitor', type: 'MaterialCommunity' },
-    { id: 3, name: 'RAM', value: '16GB', icon: 'memory', type: 'MaterialCommunity' },
-    { id: 4, name: 'Storage', value: '1TB SSD', icon: 'sd', type: 'MaterialCommunity' },
+    { 
+      id: 1, 
+      name: 'CPU', 
+      value: pc.cpu || 'Non spécifié', 
+      icon: 'chip', 
+      type: 'MaterialCommunity' 
+    },
+    { 
+      id: 2, 
+      name: 'GPU', 
+      value: pc.gpu || 'Non spécifié', 
+      icon: 'monitor', 
+      type: 'MaterialCommunity' 
+    },
+    { 
+      id: 3, 
+      name: 'RAM', 
+      value: pc.ram_gb ? `${pc.ram_gb} GB` : 'Non spécifié', 
+      icon: 'memory', 
+      type: 'MaterialCommunity' 
+    },
+    { 
+      id: 4, 
+      name: 'Storage', 
+      value: formatStorage(pc.storage_gb), 
+      icon: 'harddisk', 
+      type: 'MaterialCommunity' 
+    },
+    { 
+      id: 5, 
+      name: 'Screen', 
+      value: pc.screen_size ? `${pc.screen_size}"` : 'Non spécifié', 
+      icon: 'monitor', 
+      type: 'MaterialCommunity' 
+    },
   ];
 
   const renderIcon = (item) => {
@@ -27,27 +95,32 @@ export default function PcDetailsScreen({ route, navigation }) {
       <StatusBar barStyle="light-content" />      
       <ScrollView style={styles.container}>
         <Image
-          source={{ uri: pc.image }}
+          source={{ 
+            uri: pc.image_link || pc.image_url || pc.image || "https://via.placeholder.com/400x300"
+          }}
           style={styles.image}
+          resizeMode="cover"
         />
 
         <View style={styles.detailsContainer}>
           <View style={styles.infoRow}>
-            {/* Ajout d'un fallback textuel pour éviter l'erreur si la donnée est undefined */}
-            <Text style={styles.brandText}>{pc.brand || 'Marque inconnue'}</Text> 
-            <View style={styles.ratingContainer}>
-              <AntDesign name="star" size={14} color="#f1c40f" />
-              {/* Ajout d'un fallback textuel pour éviter l'erreur si la donnée est undefined */}
-              <Text style={styles.ratingText}>{pc.rating || 'N/A'}</Text>
-            </View>
+            <Text style={styles.brandText}>{getBrand(pc.name)}</Text> 
+            {pc.rating !== null && pc.rating !== undefined && (
+              <View style={styles.ratingContainer}>
+                <View style={styles.starsRow}>
+                  {renderStars(pc.rating)}
+                </View>
+                <Text style={styles.ratingText}>{pc.rating?.toFixed(1)}</Text>
+              </View>
+            )}
           </View>
 
           <Text style={styles.nameText}>
-            {pc.name}
+            {pc.name || "Nom non disponible"}
           </Text>
           
           <Text style={styles.priceText}>
-            {pc.price.toLocaleString()} dh
+            {pc.price ? `${pc.price.toLocaleString()} dh` : "Prix non disponible"}
           </Text>
 
           {/* Section Spécifications */}
@@ -66,18 +139,24 @@ export default function PcDetailsScreen({ route, navigation }) {
             ))}
           </View>
 
-          {/* Le bouton d'achat de l'image est plus stylisé qu'un simple <Button> */}
-          <TouchableOpacity style={styles.buyButton} onPress={() => Linking.openURL(pc.link)} >
+          {/* Le bouton d'achat */}
+          {pc.external_link && (
+            <TouchableOpacity 
+              style={styles.buyButton} 
+              onPress={() => Linking.openURL(pc.external_link)}
+              activeOpacity={0.8}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={styles.buyButtonText}>Buy Now</Text>
-            <MaterialCommunityIcons 
-               name="arrow-top-right"  // Icône qui indique un lien externe
-               size={16} 
-               color="#fff" 
-              style={{ marginLeft: 5 }} // un petit espace entre le texte et l'icône
-            />
-          </View>
-          </TouchableOpacity>
+                <Text style={styles.buyButtonText}>Buy Now</Text>
+                <MaterialCommunityIcons 
+                  name="arrow-top-right"
+                  size={16} 
+                  color="#fff" 
+                  style={{ marginLeft: 5 }}
+                />
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -140,8 +219,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 15,
   },
+  starsRow: {
+    flexDirection: 'row',
+    marginRight: 6,
+  },
   ratingText: {
-    marginLeft: 5,
+    marginLeft: 4,
     color: '#ecf0f1',
     fontSize: 14,
     fontWeight: 'bold',

@@ -1,8 +1,7 @@
-import { View, Text, FlatList, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, FlatList, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import PcCard from '../components/PcCard';
-//peu importe le type de recherche
-//j'affiche toujours MOCK_PCS !!!!!!!!!!!!!!!!
-//search type simple avancé ou par nom 
+
 export default function ResultsScreen({ route, navigation }) {
   const { results } = route.params || {};
   const laptops = results?.data || results?.laptops || results || [];
@@ -10,9 +9,8 @@ export default function ResultsScreen({ route, navigation }) {
   console.log("[ResultsScreen] Données reçues:", laptops?.length || 0, "laptops");
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <StatusBar barStyle="light-content" />
-      {/* La section d'en-tête fait partie du design de l'image mais pas du code React Native fourni. Je me concentre sur la partie liste. */}
       
       <View style={styles.listContainer}>
         <Text style={styles.headerText}>
@@ -20,7 +18,7 @@ export default function ResultsScreen({ route, navigation }) {
         </Text>
 
         <FlatList
-          data={laptops.length > 0 ? laptops : MOCK_PCS}
+          data={laptops.length > 0 ? laptops : []}
           keyExtractor={(item, index) => item.id?.toString() || item.laptop_id?.toString() || index.toString()}
           renderItem={({ item }) => (
             <PcCard
@@ -30,27 +28,32 @@ export default function ResultsScreen({ route, navigation }) {
               }
             />
           )}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
         />
       </View>
     </SafeAreaView>
-    
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#12122C', // Couleur d'arrière-plan bleu nuit foncée
+    backgroundColor: '#12122C',
   },
   listContainer: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
+    flex: 1,
+    paddingHorizontal: 15,
+    paddingTop: 15,
+  },
+  listContent: {
+    paddingBottom: 20,
   },
   headerText: {
     fontSize: 16,
-    color: '#aaa', // Couleur gris clair pour le texte du compteur
-    marginBottom: 10,
-    marginLeft: 10,
+    color: '#A0A0BC',
+    marginBottom: 15,
+    fontWeight: '500',
   },
 });
 

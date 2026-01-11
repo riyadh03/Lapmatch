@@ -1,63 +1,110 @@
 // PcCard.js
-import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import AppButton from './AppButton';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const PcCard = ({ pc, onPress }) => {
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = (e) => {
+    e.stopPropagation(); // Empêcher le déclenchement de onPress
     setIsFavorite(!isFavorite);
   };
 
+  // Fonction pour tronquer le nom si trop long
+  const getShortName = (name) => {
+    if (!name) return "Laptop";
+    const maxLength = 40; // Longueur maximale du nom
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + "...";
+  };
+
+  // Fonction pour afficher les étoiles de rating
+  const renderStars = (rating) => {
+    if (!rating || rating === null) return null;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const stars = [];
+
+    for (let i = 0; i < fullStars; i++) {
+      stars.push(<Ionicons key={i} name="star" size={16} color="#f1c40f" />);
+    }
+    if (hasHalfStar) {
+      stars.push(
+        <Ionicons key="half" name="star-half" size={16} color="#f1c40f" />
+      );
+    }
+    const emptyStars = 5 - Math.ceil(rating);
+    for (let i = 0; i < emptyStars; i++) {
+      stars.push(
+        <Ionicons
+          key={`empty-${i}`}
+          name="star-outline"
+          size={16}
+          color="#f1c40f"
+        />
+      );
+    }
+    return stars;
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       {/* Image du PC */}
       <Image
-        source={{ uri: pc.image_url || "https://via.placeholder.com/300x200" }}
+        source={{
+          uri:
+            pc.image_url || pc.image || "https://via.placeholder.com/300x200",
+        }}
         style={styles.image}
-        resizeMode="contain"
+        resizeMode="cover"
       />
 
       {/* Icône Favori */}
-      <TouchableOpacity style={styles.favoriteIcon} onPress={toggleFavorite}>
+      <TouchableOpacity
+        style={styles.favoriteIcon}
+        onPress={toggleFavorite}
+        activeOpacity={0.8}
+      >
         <Ionicons
           name={isFavorite ? "heart" : "heart-outline"}
-          size={24}
-          color={isFavorite ? "red" : "white"}
+          size={22}
+          color={isFavorite ? "#FF4444" : "#fff"}
         />
       </TouchableOpacity>
 
       <View style={styles.infoContainer}>
-        {/* Header : rating */}
-        <View style={styles.headerRow}>
-          {pc.rating !== null && (
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={14} color="#f1c40f" />
-              <Text style={styles.ratingText}>{pc.rating}</Text>
-            </View>
-          )}
-        </View>
+        {/* Nom du PC (tronqué) */}
+        <Text style={styles.nameText} numberOfLines={2}>
+          {getShortName(pc.name)}
+        </Text>
 
-        {/* Nom du PC */}
-        <Text style={styles.nameText}>{pc.name}</Text>
+        {/* Rating avec étoiles */}
+        {pc.rating !== null && pc.rating !== undefined && (
+          <View style={styles.ratingRow}>
+            <View style={styles.starsContainer}>{renderStars(pc.rating)}</View>
+            <Text style={styles.ratingText}>{pc.rating?.toFixed(1)}</Text>
+          </View>
+        )}
 
-        {/* Specs rapides */}
-        {pc.cpu && <Text style={styles.specText}>CPU: {pc.cpu}</Text>}
-        {pc.gpu && <Text style={styles.specText}>GPU: {pc.gpu}</Text>}
-        {pc.ram_gb && <Text style={styles.specText}>RAM: {pc.ram_gb} GB</Text>}
-        {pc.storage_gb && <Text style={styles.specText}>Storage: {pc.storage_gb} GB</Text>}
-
-        {/* Footer : prix + bouton */}
+        {/* Footer : prix + bouton View */}
         <View style={styles.footerRow}>
-          <Text style={styles.priceText}>{pc.price?.toLocaleString()} MAD</Text>
-          {pc.external_link && (
-            <AppButton
-              title="Acheter"
-              onPress={() => Linking.openURL(pc.external_link)}
-            />
-          )}
+          <Text style={styles.priceText}>
+            {pc.price
+              ? `${pc.price.toLocaleString()} dh`
+              : "Prix non disponible"}
+          </Text>
+          <TouchableOpacity style={styles.viewButton} onPress={onPress}>
+            <Text style={styles.viewButtonText}>View</Text>
+            <Ionicons name="chevron-forward" size={16} color="#4953DD" />
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -66,74 +113,81 @@ const PcCard = ({ pc, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 20,
-    borderRadius: 15,
-    overflow: 'hidden',
-    backgroundColor: '#353a7c',
-    elevation: 5,
-    shadowColor: '#000',
+    marginBottom: 15,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#1E1E3F",
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    position: 'relative', // pour que l'icône absolue soit relative à la carte
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    position: "relative",
   },
   image: {
-    width: '100%',
-    height: 150,
+    width: "100%",
+    height: 180,
+    backgroundColor: "#2A2A4A",
   },
   favoriteIcon: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    position: "absolute",
+    top: 12,
+    right: 12,
     zIndex: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 15,
-    padding: 5,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 8,
   },
   infoContainer: {
     padding: 15,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+  nameText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
     marginBottom: 8,
+    lineHeight: 22,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1e273b',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  starsContainer: {
+    flexDirection: "row",
+    marginRight: 8,
   },
   ratingText: {
-    marginLeft: 4,
-    color: '#ecf0f1',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  nameText: {
-    color: '#ecf0f1',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  specText: {
-    color: '#ecf0f1',
+    color: "#A0A0BC",
     fontSize: 14,
-    marginBottom: 2,
+    fontWeight: "500",
   },
   footerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
   },
   priceText: {
-    color: '#2ecc71',
-    fontSize: 22,
-    fontWeight: 'bold',
+    color: "#4953DD",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "transparent",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#4953DD",
+  },
+  viewButtonText: {
+    color: "#4953DD",
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 4,
   },
 });
 
