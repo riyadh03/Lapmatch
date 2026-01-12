@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 import random
-from app.services.scraping import scrape_and_update_laptops
 from app.core.neo4j import neo4j_db
 from app.auth.dependencies import get_current_admin
 from app.models.laptop import LaptopAdmin
@@ -225,6 +224,14 @@ def update_images(current_user: dict = Depends(get_current_admin)):
     Endpoint pour mettre à jour les images des laptops en base Neo4j.
     À utiliser uniquement par un administrateur.
     """
+    try:
+        from app.services.scraping import scrape_and_update_laptops
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Service scraping indisponible: {e}",
+        )
+
     laptops = neo4j_db.execute_query(
         "MATCH (l:Laptop) RETURN l.laptop_id AS laptop_id, l.external_link AS external_link"
     )

@@ -68,6 +68,10 @@ def recommend_expert(
     offset: int = 0,
     limit: int = 7
 ):
+    if eco_level:
+        eco_level = eco_level.strip()
+        if eco_level:
+            eco_level = eco_level[0]
     query = """
     MATCH (l:Laptop)-[:HAS_COMPONENT]->(cpu:Component {type: "CPU"})
     MATCH (l)-[:HAS_COMPONENT]->(gpu:Component {type: "GPU"})

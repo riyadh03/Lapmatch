@@ -5,8 +5,10 @@ from pathlib import Path
 
 # Charger le .env depuis le dossier backend
 backend_dir = Path(__file__).parent.parent.parent
-env_path = backend_dir / ".env"
-load_dotenv(dotenv_path=env_path)
+root_env_path = backend_dir.parent / ".env"
+backend_env_path = backend_dir / ".env"
+load_dotenv(dotenv_path=root_env_path)
+load_dotenv(dotenv_path=backend_env_path)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")

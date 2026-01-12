@@ -171,15 +171,6 @@ export default function HomeScreen({ navigation }) {
           iconName="settings" // Icône settings
           onPress={() => navigation.navigate("AdvancedSearch")}
         />
-        <SearchCard
-          title="Laptop comparison"
-          description="Compare multiple laptops side by side to find the best deal."
-          badgeText="Hot"
-          badgeColor="#ff8307"
-          iconColor="#ff8307"
-          iconName="laptop" 
-          onPress={() => navigation.navigate('PcComparison')}
-        />
         {/* <SearchCard
           title="Search by name"
           description="Find laptops by their model names or brands quickly."

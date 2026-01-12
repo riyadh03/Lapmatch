@@ -113,7 +113,7 @@ export default function AdvancedSearchScreen({ navigation }) {
 
   const ramOptions = [8, 16, 32, 64];
   const storageOptions = [256, 512, 1024, 2048];
-  const ecoOptions = ["A", "B", "C", "D", "E"];
+  const ecoOptions = ["A : Éco-responsable", "B : Équilibré", "C : Performance"];
 
   const handleAdvancedSearch = async () => {
     // Empêcher les requêtes multiples

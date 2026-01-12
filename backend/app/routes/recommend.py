@@ -71,16 +71,19 @@ def get_recommendations_expert(
     """
     Return a list of laptops filtered for expert users
     """
-    laptops = recommend_expert(
-        cpu_type=cpu_type,
-        gpu_type=gpu_type,
-        ram_gb=ram_gb,
-        storage_gb=storage_gb,
-        budget=budget,
-        screen_size=screen_size,
-        weight=weight,
-        eco_level=eco_level,
-        offset=offset,
-        limit=limit
-    )
+    try:
+        laptops = recommend_expert(
+            cpu_type=cpu_type,
+            gpu_type=gpu_type,
+            ram_gb=ram_gb,
+            storage_gb=storage_gb,
+            budget=budget,
+            screen_size=screen_size,
+            weight=weight,
+            eco_level=eco_level,
+            offset=offset,
+            limit=limit
+        )
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Neo4j unavailable: {e}")
     return {"count": len(laptops), "laptops": laptops}

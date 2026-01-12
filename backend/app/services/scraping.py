@@ -1,11 +1,17 @@
 import requests
-from bs4 import BeautifulSoup
 from app.core.neo4j import neo4j_db
 
 def scrape_flipkart_image(url: str) -> str | None:
     """
     Récupère l'URL de l'image principale d'un produit Flipkart.
     """
+    try:
+        from bs4 import BeautifulSoup
+    except ModuleNotFoundError as e:
+        raise RuntimeError(
+            "Dépendance manquante: beautifulsoup4. Installez-la avec: pip install beautifulsoup4"
+        ) from e
+
     headers = {"User-Agent": "Mozilla/5.0"}
     try:
         response = requests.get(url, headers=headers, timeout=10)
