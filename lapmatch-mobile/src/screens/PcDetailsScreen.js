@@ -254,11 +254,11 @@ export default function PcDetailsScreen({ route, navigation }) {
           {/* Section Produits similaires */}
           {similarLaptops.length > 0 && (
             <View style={styles.similarSection}>
-              <Text style={styles.sectionTitle}>Produits similaires</Text>
+              <Text style={styles.sectionTitle}> Similar Laptops</Text>
               {isLoadingSimilar ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="small" color="#4953DD" />
-                  <Text style={styles.loadingText}>Chargement...</Text>
+                  <Text style={styles.loadingText}>Loading...</Text>
                 </View>
               ) : (
                 <FlatList
