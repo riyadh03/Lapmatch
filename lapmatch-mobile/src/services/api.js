@@ -357,3 +357,90 @@ export const fetchSearchByName = async (
     throw error;
   }
 };
+
+/**
+ * 🔹 Récupération des laptops similaires
+ * Appelle : GET /laptops/{laptop_id}/similar
+ */
+export const fetchSimilarLaptops = async (laptopId, limit = 5) => {
+  const startTime = Date.now();
+  console.log("📡 [API] fetchSimilarLaptops - Début");
+  console.log("📋 [API] Paramètres: laptopId=", laptopId, "limit=", limit);
+
+  try {
+    const token = await getAuthToken();
+    console.log("🔑 [API] Token obtenu");
+
+    const url = `${BASE_URL}/laptops/${laptopId}/similar?limit=${limit}`;
+    console.log("🌐 [API] URL complète:", url);
+
+    const requestStartTime = Date.now();
+    console.log(
+      `⏳ [API] Envoi de la requête (timeout: ${REQUEST_TIMEOUT}ms)...`
+    );
+
+    const response = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      REQUEST_TIMEOUT
+    );
+
+    const requestDuration = Date.now() - requestStartTime;
+    console.log(`⏱️ [API] Requête HTTP terminée en ${requestDuration}ms`);
+    console.log(
+      `📊 [API] Status HTTP: ${response.status} ${response.statusText}`
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ [API] Erreur HTTP:", response.status, errorText);
+      throw new Error(
+        `Erreur ${response.status}: ${
+          errorText || "Erreur lors de la récupération des laptops similaires"
+        }`
+      );
+    }
+
+    const data = await response.json();
+    const totalDuration = Date.now() - startTime;
+    console.log(`✅ [API] Réponse reçue en ${totalDuration}ms total`);
+    console.log(
+      "📦 [API] Données reçues:",
+      data?.success ? "Succès" : "Échec",
+      "- Nombre d'éléments:",
+      data?.data?.length || 0
+    );
+
+    return data;
+  } catch (error) {
+    const totalDuration = Date.now() - startTime;
+    console.error(`❌ [API] Erreur après ${totalDuration}ms:`, error.message);
+
+    // Gestion spécifique des erreurs réseau
+    if (
+      error.message.includes("Network request failed") ||
+      error.message.includes("expiré")
+    ) {
+      console.error("🌐 [API] Problème réseau détecté:");
+      console.error("  - Vérifiez votre connexion internet");
+      console.error("  - Vérifiez que ngrok est actif");
+      console.error("  - Vérifiez que le backend est démarré");
+      throw new Error(
+        "Problème de connexion réseau. Vérifiez votre connexion et que le serveur est accessible."
+      );
+    }
+
+    if (error.message.includes("expiré")) {
+      throw new Error(
+        "Le serveur met trop de temps à répondre. Veuillez réessayer."
+      );
+    }
+
+    console.error("❌ [API] Stack trace:", error.stack);
+    throw error;
+  }
+};
