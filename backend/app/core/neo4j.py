@@ -43,7 +43,9 @@ class Neo4jDatabase:
         try:
             self.driver = GraphDatabase.driver(
                 NEO4J_URI,
-                auth=(NEO4J_USER, NEO4J_PASSWORD)
+                auth=(NEO4J_USER, NEO4J_PASSWORD),
+                connection_timeout=5,
+                keep_alive=True,
             )
             # Test de connexion
             with self.driver.session(database=NEO4J_DATABASE) as session:

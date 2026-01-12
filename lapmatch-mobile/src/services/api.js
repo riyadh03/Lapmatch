@@ -137,6 +137,15 @@ export const fetchNonExpertRecommendations = async (params) => {
       data?.data?.length || 0
     );
 
+    if (data && (data.laptops || data.data)) {
+      return {
+        ...data,
+        laptops: data.laptops || data.data,
+        data: data.data || data.laptops,
+        success: data.success ?? true,
+      };
+    }
+
     return data;
   } catch (error) {
     const totalDuration = Date.now() - startTime;
@@ -180,7 +189,10 @@ export const fetchExpertRecommendations = async (params) => {
     const token = await getAuthToken();
     console.log("🔑 [API] Token obtenu");
 
-    const query = new URLSearchParams(params).toString();
+    const filteredParams = Object.fromEntries(
+      Object.entries(params || {}).filter(([, v]) => v !== null && v !== undefined && v !== "")
+    );
+    const query = new URLSearchParams(filteredParams).toString();
     const url = `${BASE_URL}/recommendations/expert?${query}`;
     console.log("🌐 [API] URL complète:", url);
 

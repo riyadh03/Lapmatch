@@ -18,8 +18,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function AdvancedSearchScreen({ navigation }) {
   // États pour les filtres
   const [cpu, setCpu] = useState("");
+  const [gpu, setGpu] = useState("");
   const [ram, setRam] = useState(16);
   const [budget, setBudget] = useState(15000);
+  const [storage, setStorage] = useState(512);
+  const [screenSize, setScreenSize] = useState(15);
+  const [weight, setWeight] = useState(3);
+  const [ecoLevel, setEcoLevel] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,12 +32,22 @@ export default function AdvancedSearchScreen({ navigation }) {
     const loadFilters = async () => {
       try {
         const storedCpu = await AsyncStorage.getItem("advancedSearchCpu");
+        const storedGpu = await AsyncStorage.getItem("advancedSearchGpu");
         const storedRam = await AsyncStorage.getItem("advancedSearchRam");
         const storedBudget = await AsyncStorage.getItem("advancedSearchBudget");
+        const storedStorage = await AsyncStorage.getItem("advancedSearchStorage");
+        const storedScreenSize = await AsyncStorage.getItem("advancedSearchScreenSize");
+        const storedWeight = await AsyncStorage.getItem("advancedSearchWeight");
+        const storedEcoLevel = await AsyncStorage.getItem("advancedSearchEcoLevel");
 
         if (storedCpu) setCpu(storedCpu);
+        if (storedGpu) setGpu(storedGpu);
         if (storedRam) setRam(Number(storedRam));
         if (storedBudget) setBudget(Number(storedBudget));
+        if (storedStorage) setStorage(Number(storedStorage));
+        if (storedScreenSize) setScreenSize(Number(storedScreenSize));
+        if (storedWeight) setWeight(Number(storedWeight));
+        if (storedEcoLevel) setEcoLevel(storedEcoLevel);
       } catch (error) {
         console.error("Erreur lors du chargement des filtres", error);
       }
@@ -45,14 +60,19 @@ export default function AdvancedSearchScreen({ navigation }) {
     const saveFilters = async () => {
       try {
         await AsyncStorage.setItem("advancedSearchCpu", cpu);
+        await AsyncStorage.setItem("advancedSearchGpu", gpu);
         await AsyncStorage.setItem("advancedSearchRam", ram.toString());
         await AsyncStorage.setItem("advancedSearchBudget", budget.toString());
+        await AsyncStorage.setItem("advancedSearchStorage", storage.toString());
+        await AsyncStorage.setItem("advancedSearchScreenSize", screenSize.toString());
+        await AsyncStorage.setItem("advancedSearchWeight", weight.toString());
+        await AsyncStorage.setItem("advancedSearchEcoLevel", ecoLevel ? ecoLevel : "");
       } catch (error) {
         console.error("Erreur lors de la sauvegarde des filtres", error);
       }
     };
     saveFilters();
-  }, [cpu, ram, budget]); // déclenche à chaque modification
+  }, [cpu, gpu, ram, budget, storage, screenSize, weight, ecoLevel]); // déclenche à chaque modification
 
   // États pour la visibilité des Modals
   const [activeModal, setActiveModal] = useState(null); // 'brand', 'cpu', ou 'ram'
@@ -67,6 +87,17 @@ export default function AdvancedSearchScreen({ navigation }) {
     "Ryzen 7",
   ];
 
+  const gpuOptions = [
+    "RTX 3050",
+    "RTX 3060",
+    "RTX 3070",
+    "RTX 4060",
+    "RTX 4070",
+    "GTX 1650",
+    "Iris Xe",
+    "Radeon",
+  ];
+
   const normalizeCpu = (cpuLabel) => {
     if (!cpuLabel) return "";
     return cpuLabel
@@ -75,7 +106,14 @@ export default function AdvancedSearchScreen({ navigation }) {
       .replace("ryzen ", "ryzen ");
   };
 
+  const normalizeGpu = (gpuLabel) => {
+    if (!gpuLabel) return "";
+    return gpuLabel.toLowerCase().replace("nvidia ", "").replace("amd ", "");
+  };
+
   const ramOptions = [8, 16, 32, 64];
+  const storageOptions = [256, 512, 1024, 2048];
+  const ecoOptions = ["A", "B", "C", "D", "E"];
 
   const handleAdvancedSearch = async () => {
     // Empêcher les requêtes multiples
@@ -86,17 +124,28 @@ export default function AdvancedSearchScreen({ navigation }) {
 
     // Réinitialiser l'erreur
     setError("");
+
+    if (!cpu) {
+      setError("Veuillez choisir un CPU");
+      return;
+    }
+
+    if (!gpu) {
+      setError("Veuillez choisir un GPU");
+      return;
+    }
+
     setIsLoading(true);
 
     const searchParams = {
       cpu_type: normalizeCpu(cpu),
-      gpu_type: "", // optionnel
+      gpu_type: normalizeGpu(gpu),
       ram_gb: ram,
-      storage_gb: 512,
+      storage_gb: storage,
       budget: budget,
-      screen_size: 15,
-      weight: 3,
-      eco_level: null,
+      screen_size: screenSize,
+      weight: weight,
+      eco_level: ecoLevel || null,
       offset: 0,
       limit: 7,
     };
@@ -166,12 +215,71 @@ export default function AdvancedSearchScreen({ navigation }) {
         onPress={() => setActiveModal("cpu")}
       />
 
+      <SelectInput
+        label="Carte graphique"
+        value={gpu}
+        placeholder="Choisir un GPU"
+        onPress={() => setActiveModal("gpu")}
+      />
+
       {/* Sélection de la RAM (Nouveau) */}
       <SelectInput
         label="Mémoire RAM"
         value={`${ram} GB`}
         placeholder="Choisir la capacité"
         onPress={() => setActiveModal("ram")}
+      />
+
+      <SelectInput
+        label="Stockage minimum"
+        value={`${storage} GB`}
+        placeholder="Choisir le stockage"
+        onPress={() => setActiveModal("storage")}
+      />
+
+      <Text style={styles.label}>Taille d'écran minimum</Text>
+      <View style={styles.sliderContainer}>
+        <Text style={styles.valueText}>{screenSize.toFixed(1)} pouces</Text>
+        <Slider
+          style={{ width: "100%", height: 40 }}
+          minimumValue={11}
+          maximumValue={18}
+          step={0.5}
+          minimumTrackTintColor="#4953DD"
+          thumbTintColor="#4953DD"
+          value={screenSize}
+          onValueChange={setScreenSize}
+        />
+        <View style={styles.rangeTextContainer}>
+          <Text style={styles.rangeText}>11"</Text>
+          <Text style={styles.rangeText}>18"</Text>
+        </View>
+      </View>
+
+      <Text style={styles.label}>Poids maximum</Text>
+      <View style={styles.sliderContainer}>
+        <Text style={styles.valueText}>{weight.toFixed(1)} kg</Text>
+        <Slider
+          style={{ width: "100%", height: 40 }}
+          minimumValue={1}
+          maximumValue={5}
+          step={0.1}
+          minimumTrackTintColor="#4953DD"
+          thumbTintColor="#4953DD"
+          value={weight}
+          onValueChange={setWeight}
+        />
+        <View style={styles.rangeTextContainer}>
+          <Text style={styles.rangeText}>1 kg</Text>
+          <Text style={styles.rangeText}>5 kg</Text>
+        </View>
+      </View>
+
+      <SelectInput
+        label="Eco level (optionnel)"
+        value={ecoLevel ? ecoLevel : ""}
+        placeholder="Aucun"
+        onPress={() => setActiveModal("eco")}
       />
 
       {/* Slider Budget */}
@@ -189,8 +297,8 @@ export default function AdvancedSearchScreen({ navigation }) {
           onValueChange={setBudget}
         />
         <View style={styles.rangeTextContainer}>
-          <Text style={styles.rangeText}>2.000 dh</Text>
-          <Text style={styles.rangeText}>40.000 dh</Text>
+          <Text style={styles.rangeText}>500 dh</Text>
+          <Text style={styles.rangeText}>50.000 dh</Text>
         </View>
       </View>
 
@@ -229,11 +337,20 @@ export default function AdvancedSearchScreen({ navigation }) {
             ? ramOptions
             : activeModal === "cpu"
             ? cpuOptions
+            : activeModal === "gpu"
+            ? gpuOptions
+            : activeModal === "storage"
+            ? storageOptions
+            : activeModal === "eco"
+            ? ["", ...ecoOptions]
             : ramOptions
         }
         onSelect={(val) => {
           if (activeModal === "cpu") setCpu(val);
+          if (activeModal === "gpu") setGpu(val);
           if (activeModal === "ram") setRam(val);
+          if (activeModal === "storage") setStorage(val);
+          if (activeModal === "eco") setEcoLevel(val ? val : null);
           setActiveModal(null);
         }}
         title={activeModal?.toUpperCase()}
