@@ -11,7 +11,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { favoritesService } from "../services/favoritesService";
 
-const PcCard = ({ pc, onPress, isFavoriteInitial = false, onFavoriteChange, style }) => {
+const PcCard = ({
+  pc,
+  onPress,
+  isFavoriteInitial = false,
+  onFavoriteChange,
+  style,
+}) => {
   const [isFavorite, setIsFavorite] = useState(isFavoriteInitial);
 
   useEffect(() => {
@@ -65,12 +71,19 @@ const PcCard = ({ pc, onPress, isFavoriteInitial = false, onFavoriteChange, styl
   };
 
   return (
-    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, style]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       {/* Image du PC */}
       <Image
         source={{
           uri:
-            pc.image_url || pc.image || "https://via.placeholder.com/300x200",
+            pc.image_link ||
+            pc.image_url ||
+            pc.image ||
+            "https://via.placeholder.com/300x200",
         }}
         style={styles.image}
         resizeMode="cover"

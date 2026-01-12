@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Depends
 from app.core.neo4j import neo4j_db
 from app.auth.dependencies import get_current_user
-from typing import Optional
+from app.services.similarity import get_similar_laptops
 import time
 
 router = APIRouter(prefix="/laptops", tags=["laptops"])
@@ -15,17 +15,18 @@ def list_laptops():
 @router.get("/search")
 def search_laptops_by_name(
     search_term: str = Query(..., description="Terme de recherche (nom de la marque ou du laptop)"),
-    max_distance: int = Query(3, ge=0, le=10, description="Distance maximale de Levenshtein (tolérance aux fautes de frappe)"),
-    limit: int = Query(20, ge=1, le=50, description="Nombre maximum de résultats"),
+    limit: int = Query(15, ge=1, le=50, description="Nombre maximum de résultats"),
     user=Depends(get_current_user)
 ):
     """
-    Recherche de laptops par nom avec tolérance aux fautes de frappe.
-    Utilise apoc.text.distance pour la distance de Levenshtein.
+    Recherche de laptops par nom via un index full-text Neo4j.
+    Utilise l'index full-text 'laptopNameIndex' pour une recherche rapide et floue.
+    Le "~" après searchTerm active la recherche floue (fuzzy search) native de l'index.
+    Sécurisé par Firebase Auth.
     """
     start_time = time.time()
     print(f"[BACKEND] 📥 Requête reçue - /laptops/search")
-    print(f"[BACKEND] 📋 Paramètres: search_term='{search_term}', max_distance={max_distance}, limit={limit}")
+    print(f"[BACKEND] 📋 Paramètres: search_term='{search_term}', limit={limit}")
     
     if not search_term or len(search_term.strip()) < 2:
         raise HTTPException(
@@ -36,31 +37,29 @@ def search_laptops_by_name(
     # Nettoyer le terme de recherche
     search_term_clean = search_term.strip()
     
-    # Requête Cypher avec APOC pour la distance de Levenshtein
-    # Si APOC n'est pas disponible, on peut utiliser une recherche alternative
+    # Requête Cypher avec index full-text Neo4j
+    # Le "~" après searchTerm active la recherche floue (fuzzy search)
     query = """
-    MATCH (l:Laptop)
-    WITH l, apoc.text.distance(toLower(l.name), toLower($search_term)) AS dist
-    WHERE dist < $max_distance
-    RETURN l, dist
-    ORDER BY dist ASC
+    CALL db.index.fulltext.queryNodes("laptopNameIndex", $search_term + "~") 
+    YIELD node, score
+    RETURN node AS l, score
+    ORDER BY score DESC
     LIMIT $limit
     """
     
     params = {
         "search_term": search_term_clean,
-        "max_distance": max_distance,
         "limit": limit
     }
     
     try:
-        print(f"[BACKEND] 🔍 Exécution de la requête Neo4j avec APOC...")
+        print(f"[BACKEND] 🔍 Exécution de la requête Neo4j avec index full-text...")
         query_start = time.time()
         result = neo4j_db.execute_query(query, params)
         query_duration = time.time() - query_start
         print(f"[BACKEND] ✅ Requête Neo4j terminée en {query_duration:.2f}s - {len(result)} résultats")
         
-        # Conversion des résultats
+        # Conversion des résultats : le nœud Laptop avec tous ses champs
         laptops = [dict(record["l"]) for record in result]
         
         total_duration = time.time() - start_time
@@ -77,52 +76,60 @@ def search_laptops_by_name(
         error_msg = str(e)
         print(f"[BACKEND] ❌ Erreur lors de la recherche: {error_msg}")
         
-        # Si APOC n'est pas disponible, essayer une recherche alternative
-        if "apoc" in error_msg.lower() or "procedure" in error_msg.lower():
-            print(f"[BACKEND] ⚠️ APOC non disponible, utilisation d'une recherche alternative...")
-            return _search_laptops_fallback(search_term_clean, limit)
-        
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la recherche: {error_msg}"
         )
 
 
-def _search_laptops_fallback(search_term: str, limit: int):
+@router.get("/{laptop_id}/similar")
+def get_similar_laptops_endpoint(
+    laptop_id: int,
+    limit: int = Query(5, ge=1, le=10, description="Nombre maximum de laptops similaires à retourner"),
+    user=Depends(get_current_user)
+):
     """
-    Recherche alternative sans APOC : utilise CONTAINS avec toLower()
-    Moins précis que la distance de Levenshtein mais fonctionne sans APOC
+    Récupère les laptops similaires à un laptop donné.
+    Utilise la relation SIMILAR_TO avec le similarity_score calculé.
+    Les laptops sont triés par score de similarité décroissant.
+    Sécurisé par Firebase Auth.
     """
-    query = """
-    MATCH (l:Laptop)
-    WHERE toLower(l.name) CONTAINS toLower($search_term)
-    RETURN l
-    ORDER BY l.rating DESC NULLS LAST, l.price ASC
-    LIMIT $limit
-    """
-    
-    params = {
-        "search_term": search_term,
-        "limit": limit
-    }
+    start_time = time.time()
+    print(f"[BACKEND] 📥 Requête reçue - /laptops/{laptop_id}/similar")
+    print(f"[BACKEND] 📋 Paramètres: laptop_id={laptop_id}, limit={limit}")
     
     try:
+        print(f"[BACKEND] 🔍 Appel de get_similar_laptops...")
         query_start = time.time()
-        result = neo4j_db.execute_query(query, params)
+        laptops = get_similar_laptops(laptop_id, limit)
         query_duration = time.time() - query_start
-        print(f"[BACKEND] ✅ Recherche alternative terminée en {query_duration:.2f}s - {len(result)} résultats")
+        print(f"[BACKEND] ✅ Récupération terminée en {query_duration:.2f}s - {len(laptops)} résultats")
         
-        laptops = [dict(record["l"]) for record in result]
+        total_duration = time.time() - start_time
+        print(f"[BACKEND] 🏁 Réponse envoyée en {total_duration:.2f}s total")
         
         return {
             "success": True,
             "data": laptops,
             "count": len(laptops),
-            "search_term": search_term,
-            "note": "Recherche sans APOC (CONTAINS uniquement)"
+            "laptop_id": laptop_id
         }
+        
     except Exception as e:
+        error_msg = str(e)
+        print(f"[BACKEND] ❌ Erreur lors de la récupération des laptops similaires: {error_msg}")
+        
+        # Si le laptop n'existe pas, retourner une liste vide plutôt qu'une erreur
+        if "not found" in error_msg.lower() or "does not exist" in error_msg.lower():
+            return {
+                "success": True,
+                "data": [],
+                "count": 0,
+                "laptop_id": laptop_id,
+                "message": "Laptop non trouvé ou aucun laptop similaire disponible"
+            }
+        
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la recherche alternative: {str(e)}"
+            detail=f"Erreur lors de la récupération des laptops similaires: {error_msg}"
         )

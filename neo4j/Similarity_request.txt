@@ -1,4 +1,4 @@
-Logique de similarité 
+Similarite sur les pc:
 
 MATCH (l1:Laptop), (l2:Laptop)
 WHERE l1.laptop_id < l2.laptop_id
@@ -26,3 +26,7 @@ WHERE total_score >= 12
 // Création de la relation avec le score stocké
 MERGE (l1)-[s:SIMILAR_TO]-(l2)
 SET s.similarity_score = total_score
+
+------------------------------------------------------------------------------------------
+
+
