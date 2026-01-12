@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +9,8 @@ import {
   ScrollView,
   StatusBar,
   TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -15,10 +18,61 @@ import {
   Ionicons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import { fetchSimilarLaptops } from "../services/api";
+import PcCard from "../components/PcCard";
 
 export default function PcDetailsScreen({ route, navigation }) {
   const { pc } = route.params;
   const insets = useSafeAreaInsets();
+  const [similarLaptops, setSimilarLaptops] = useState([]);
+  const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
+
+  // Charger les laptops similaires au montage du composant
+  useEffect(() => {
+    const loadSimilarLaptops = async () => {
+      if (!pc.laptop_id && !pc.id) {
+        console.log(
+          "[PcDetails] ⚠️ Pas de laptop_id, impossible de charger les similaires"
+        );
+        return;
+      }
+
+      const laptopId = pc.laptop_id || pc.id;
+      setIsLoadingSimilar(true);
+
+      try {
+        console.log(
+          "[PcDetails] 🔍 Chargement des laptops similaires pour:",
+          laptopId
+        );
+        const response = await fetchSimilarLaptops(laptopId, 5);
+
+        if (response?.success && response?.data) {
+          // Exclure le laptop actuel des résultats similaires
+          const filtered = response.data.filter(
+            (laptop) =>
+              (laptop.laptop_id || laptop.id) !== (pc.laptop_id || pc.id)
+          );
+          setSimilarLaptops(filtered);
+          console.log(
+            "[PcDetails] ✅",
+            filtered.length,
+            "laptops similaires chargés"
+          );
+        }
+      } catch (error) {
+        console.error(
+          "[PcDetails] ❌ Erreur lors du chargement des similaires:",
+          error.message
+        );
+        // En cas d'erreur, on continue sans afficher d'erreur visible à l'utilisateur
+      } finally {
+        setIsLoadingSimilar(false);
+      }
+    };
+
+    loadSimilarLaptops();
+  }, [pc.laptop_id, pc.id]);
 
   // Extraire la marque du premier mot du nom
   const getBrand = (name) => {
@@ -196,6 +250,40 @@ export default function PcDetailsScreen({ route, navigation }) {
               </View>
             </TouchableOpacity>
           )}
+
+          {/* Section Produits similaires */}
+          {similarLaptops.length > 0 && (
+            <View style={styles.similarSection}>
+              <Text style={styles.sectionTitle}>Produits similaires</Text>
+              {isLoadingSimilar ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#4953DD" />
+                  <Text style={styles.loadingText}>Chargement...</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={similarLaptops}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  keyExtractor={(item) =>
+                    (item.laptop_id || item.id || Math.random()).toString()
+                  }
+                  contentContainerStyle={styles.similarList}
+                  renderItem={({ item }) => (
+                    <View style={styles.similarCardContainer}>
+                      <PcCard
+                        pc={item}
+                        onPress={() =>
+                          navigation.push("PcDetails", { pc: item })
+                        }
+                        style={styles.similarCard}
+                      />
+                    </View>
+                  )}
+                />
+              )}
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -319,5 +407,30 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  similarSection: {
+    marginTop: 30,
+    marginBottom: 20,
+  },
+  similarList: {
+    paddingRight: 20,
+  },
+  similarCardContainer: {
+    width: 280,
+    marginRight: 15,
+  },
+  similarCard: {
+    marginBottom: 0,
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  loadingText: {
+    color: "#A0A0BC",
+    marginLeft: 10,
+    fontSize: 14,
   },
 });

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query, HTTPException, Depends
 from app.core.neo4j import neo4j_db
 from app.auth.dependencies import get_current_user
+from app.services.similarity import get_similar_laptops
 import time
 
 router = APIRouter(prefix="/laptops", tags=["laptops"])
@@ -78,4 +79,57 @@ def search_laptops_by_name(
         raise HTTPException(
             status_code=500,
             detail=f"Erreur lors de la recherche: {error_msg}"
+        )
+
+
+@router.get("/{laptop_id}/similar")
+def get_similar_laptops_endpoint(
+    laptop_id: int,
+    limit: int = Query(5, ge=1, le=10, description="Nombre maximum de laptops similaires à retourner"),
+    user=Depends(get_current_user)
+):
+    """
+    Récupère les laptops similaires à un laptop donné.
+    Utilise la relation SIMILAR_TO avec le similarity_score calculé.
+    Les laptops sont triés par score de similarité décroissant.
+    Sécurisé par Firebase Auth.
+    """
+    start_time = time.time()
+    print(f"[BACKEND] 📥 Requête reçue - /laptops/{laptop_id}/similar")
+    print(f"[BACKEND] 📋 Paramètres: laptop_id={laptop_id}, limit={limit}")
+    
+    try:
+        print(f"[BACKEND] 🔍 Appel de get_similar_laptops...")
+        query_start = time.time()
+        laptops = get_similar_laptops(laptop_id, limit)
+        query_duration = time.time() - query_start
+        print(f"[BACKEND] ✅ Récupération terminée en {query_duration:.2f}s - {len(laptops)} résultats")
+        
+        total_duration = time.time() - start_time
+        print(f"[BACKEND] 🏁 Réponse envoyée en {total_duration:.2f}s total")
+        
+        return {
+            "success": True,
+            "data": laptops,
+            "count": len(laptops),
+            "laptop_id": laptop_id
+        }
+        
+    except Exception as e:
+        error_msg = str(e)
+        print(f"[BACKEND] ❌ Erreur lors de la récupération des laptops similaires: {error_msg}")
+        
+        # Si le laptop n'existe pas, retourner une liste vide plutôt qu'une erreur
+        if "not found" in error_msg.lower() or "does not exist" in error_msg.lower():
+            return {
+                "success": True,
+                "data": [],
+                "count": 0,
+                "laptop_id": laptop_id,
+                "message": "Laptop non trouvé ou aucun laptop similaire disponible"
+            }
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur lors de la récupération des laptops similaires: {error_msg}"
         )
