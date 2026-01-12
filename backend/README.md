@@ -1,6 +1,27 @@
 # Backend (FastAPI)
 
-## Installation
+## Démarrage (recommandé via Docker)
+
+Le backend est prévu pour être lancé via `docker compose` depuis la racine du repo.
+
+```bash
+docker compose up --build
+```
+
+Le fichier `.env` utilisé est celui à la racine (`LapMatch/.env`).
+
+Pour arrêter:
+
+```bash
+docker compose down
+```
+
+## URLs utiles
+
+- `http://localhost:8000/health`
+- `http://localhost:8000/health/neo4j`
+
+## Installation (option dev local)
 
 1. Créer un environnement virtuel:
 
@@ -20,9 +41,12 @@
 
 3. Configurer les variables d'environnement:
 
-   - Créer un fichier `.env` dans le dossier `backend/`
-   - Ajouter: `FIREBASE_SERVICE_ACCOUNT=secrets/firebase.json`
-   - Configurer Neo4j si nécessaire
+   - Copier l'exemple `backend/.env.example` et adapter les valeurs
+   - Neo4j:
+     - `NEO4J_URI` (ex: `bolt://localhost:7687` en local, ou `bolt://neo4j:7687` via Docker)
+     - `NEO4J_USER`, `NEO4J_PASSWORD`, `NEO4J_DATABASE`
+   - Firebase (optionnel):
+     - `FIREBASE_SERVICE_ACCOUNT` ou `FIREBASE_CREDENTIALS_PATH` vers un JSON de service account
 
 4. Démarrer l'API:
    ```bash
