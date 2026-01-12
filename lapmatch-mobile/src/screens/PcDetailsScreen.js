@@ -22,7 +22,7 @@ import { fetchSimilarLaptops } from "../services/api";
 import PcCard from "../components/PcCard";
 
 export default function PcDetailsScreen({ route, navigation }) {
-  const { pc } = route.params;
+  const { pc } = route.params || {};
   const insets = useSafeAreaInsets();
   const [similarLaptops, setSimilarLaptops] = useState([]);
   const [isLoadingSimilar, setIsLoadingSimilar] = useState(false);
@@ -30,7 +30,7 @@ export default function PcDetailsScreen({ route, navigation }) {
   // Charger les laptops similaires au montage du composant
   useEffect(() => {
     const loadSimilarLaptops = async () => {
-      if (!pc.laptop_id && !pc.id) {
+      if (!pc || (!pc.laptop_id && !pc.id)) {
         console.log(
           "[PcDetails] ⚠️ Pas de laptop_id, impossible de charger les similaires"
         );
@@ -72,7 +72,7 @@ export default function PcDetailsScreen({ route, navigation }) {
     };
 
     loadSimilarLaptops();
-  }, [pc.laptop_id, pc.id]);
+  }, [pc?.laptop_id, pc?.id]);
 
   // Extraire la marque du premier mot du nom
   const getBrand = (name) => {
@@ -121,43 +121,45 @@ export default function PcDetailsScreen({ route, navigation }) {
   };
 
   // Construire les spécifications depuis les vraies données
-  const specifications = [
-    {
-      id: 1,
-      name: "CPU",
-      value: pc.cpu || "Non spécifié",
-      icon: "chip",
-      type: "MaterialCommunity",
-    },
-    {
-      id: 2,
-      name: "GPU",
-      value: pc.gpu || "Non spécifié",
-      icon: "monitor",
-      type: "MaterialCommunity",
-    },
-    {
-      id: 3,
-      name: "RAM",
-      value: pc.ram_gb ? `${pc.ram_gb} GB` : "Non spécifié",
-      icon: "memory",
-      type: "MaterialCommunity",
-    },
-    {
-      id: 4,
-      name: "Storage",
-      value: formatStorage(pc.storage_gb),
-      icon: "harddisk",
-      type: "MaterialCommunity",
-    },
-    {
-      id: 5,
-      name: "Screen",
-      value: pc.screen_size ? `${pc.screen_size}"` : "Non spécifié",
-      icon: "monitor",
-      type: "MaterialCommunity",
-    },
-  ];
+  const specifications = pc
+    ? [
+        {
+          id: 1,
+          name: "CPU",
+          value: pc.cpu || "Non spécifié",
+          icon: "chip",
+          type: "MaterialCommunity",
+        },
+        {
+          id: 2,
+          name: "GPU",
+          value: pc.gpu || "Non spécifié",
+          icon: "monitor",
+          type: "MaterialCommunity",
+        },
+        {
+          id: 3,
+          name: "RAM",
+          value: pc.ram_gb ? `${pc.ram_gb} GB` : "Non spécifié",
+          icon: "memory",
+          type: "MaterialCommunity",
+        },
+        {
+          id: 4,
+          name: "Storage",
+          value: formatStorage(pc.storage_gb),
+          icon: "harddisk",
+          type: "MaterialCommunity",
+        },
+        {
+          id: 5,
+          name: "Screen",
+          value: pc.screen_size ? `${pc.screen_size}"` : "Non spécifié",
+          icon: "monitor",
+          type: "MaterialCommunity",
+        },
+      ]
+    : [];
 
   const renderIcon = (item) => {
     if (item.type === "Ionicons") {
@@ -179,112 +181,128 @@ export default function PcDetailsScreen({ route, navigation }) {
     >
       <StatusBar barStyle="light-content" />
       <ScrollView style={styles.container}>
-        <Image
-          source={{
-            uri: (
-              pc.image_link ||
-              pc.image_url ||
-              pc.image ||
-              "https://via.placeholder.com/400x300"
-            ).toString(),
-          }}
-          style={styles.image}
-          resizeMode="cover"
-          defaultSource={{ uri: "https://via.placeholder.com/400x300" }}
-        />
-
-        <View style={styles.detailsContainer}>
-          <View style={styles.infoRow}>
-            <Text style={styles.brandText}>{getBrand(pc.name)}</Text>
-            {pc.rating !== null && pc.rating !== undefined && (
-              <View style={styles.ratingContainer}>
-                <View style={styles.starsRow}>{renderStars(pc.rating)}</View>
-                <Text style={styles.ratingText}>{pc.rating?.toFixed(1)}</Text>
-              </View>
-            )}
+        {!pc ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>
+              Données du laptop non disponibles
+            </Text>
           </View>
+        ) : (
+          <>
+            <Image
+              source={{
+                uri: (
+                  pc.image_link ||
+                  pc.image_url ||
+                  pc.image ||
+                  "https://via.placeholder.com/400x300"
+                ).toString(),
+              }}
+              style={styles.image}
+              resizeMode="cover"
+              defaultSource={{ uri: "https://via.placeholder.com/400x300" }}
+            />
 
-          <Text style={styles.nameText}>{pc.name || "Nom non disponible"}</Text>
-
-          <Text style={styles.priceText}>
-            {pc.price
-              ? `${pc.price.toLocaleString()} dh`
-              : "Prix non disponible"}
-          </Text>
-
-          {/* Section Spécifications */}
-          <Text style={styles.sectionTitle}>Specifications</Text>
-          <View style={styles.specsContainer}>
-            {specifications.map((item) => (
-              <View key={item.id} style={styles.specCard}>
-                <View style={styles.specIcon}>{renderIcon(item)}</View>
-                <View>
-                  <Text style={styles.specName}>{item.name}</Text>
-                  <Text style={styles.specValue}>{item.value}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* Le bouton d'achat */}
-          {pc.external_link && (
-            <TouchableOpacity
-              style={styles.buyButton}
-              onPress={() => Linking.openURL(pc.external_link)}
-              activeOpacity={0.8}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={styles.buyButtonText}>Buy Now</Text>
-                <MaterialCommunityIcons
-                  name="arrow-top-right"
-                  size={16}
-                  color="#fff"
-                  style={{ marginLeft: 5 }}
-                />
-              </View>
-            </TouchableOpacity>
-          )}
-
-          {/* Section Produits similaires */}
-          {similarLaptops.length > 0 && (
-            <View style={styles.similarSection}>
-              <Text style={styles.sectionTitle}> Similar Laptops</Text>
-              {isLoadingSimilar ? (
-                <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#4953DD" />
-                  <Text style={styles.loadingText}>Loading...</Text>
-                </View>
-              ) : (
-                <FlatList
-                  data={similarLaptops}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  keyExtractor={(item) =>
-                    (item.laptop_id || item.id || Math.random()).toString()
-                  }
-                  contentContainerStyle={styles.similarList}
-                  renderItem={({ item }) => (
-                    <View style={styles.similarCardContainer}>
-                      <PcCard
-                        pc={item}
-                        onPress={() =>
-                          navigation.push("PcDetails", { pc: item })
-                        }
-                        style={styles.similarCard}
-                      />
+            <View style={styles.detailsContainer}>
+              <View style={styles.infoRow}>
+                <Text style={styles.brandText}>{getBrand(pc.name)}</Text>
+                {pc.rating !== null && pc.rating !== undefined && (
+                  <View style={styles.ratingContainer}>
+                    <View style={styles.starsRow}>
+                      {renderStars(pc.rating)}
                     </View>
+                    <Text style={styles.ratingText}>
+                      {pc.rating?.toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.nameText}>
+                {pc.name || "Nom non disponible"}
+              </Text>
+
+              <Text style={styles.priceText}>
+                {pc.price
+                  ? `${pc.price.toLocaleString()} dh`
+                  : "Prix non disponible"}
+              </Text>
+
+              {/* Section Spécifications */}
+              <Text style={styles.sectionTitle}>Specifications</Text>
+              <View style={styles.specsContainer}>
+                {specifications.map((item) => (
+                  <View key={item.id} style={styles.specCard}>
+                    <View style={styles.specIcon}>{renderIcon(item)}</View>
+                    <View>
+                      <Text style={styles.specName}>{item.name}</Text>
+                      <Text style={styles.specValue}>{item.value}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Le bouton d'achat */}
+              {pc.external_link && (
+                <TouchableOpacity
+                  style={styles.buyButton}
+                  onPress={() => Linking.openURL(pc.external_link)}
+                  activeOpacity={0.8}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Text style={styles.buyButtonText}>Buy Now</Text>
+                    <MaterialCommunityIcons
+                      name="arrow-top-right"
+                      size={16}
+                      color="#fff"
+                      style={{ marginLeft: 5 }}
+                    />
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {/* Section Produits similaires */}
+              {similarLaptops.length > 0 && (
+                <View style={styles.similarSection}>
+                  <Text style={styles.sectionTitle}> Similar Laptops</Text>
+                  {isLoadingSimilar ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color="#4953DD" />
+                      <Text style={styles.loadingText}>Loading...</Text>
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={similarLaptops}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      keyExtractor={(item) =>
+                        (item.laptop_id || item.id || Math.random()).toString()
+                      }
+                      contentContainerStyle={styles.similarList}
+                      renderItem={({ item }) => (
+                        <View style={styles.similarCardContainer}>
+                          <PcCard
+                            pc={item}
+                            onPress={() =>
+                              navigation.push("PcDetails", { pc: item })
+                            }
+                            style={styles.similarCard}
+                          />
+                        </View>
+                      )}
+                    />
                   )}
-                />
+                </View>
               )}
             </View>
-          )}
-        </View>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -432,5 +450,16 @@ const styles = StyleSheet.create({
     color: "#A0A0BC",
     marginLeft: 10,
     fontSize: 14,
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 200,
+  },
+  errorText: {
+    color: "#ff6b6b",
+    fontSize: 16,
+    textAlign: "center",
   },
 });
