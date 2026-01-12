@@ -64,7 +64,9 @@ export default function SignupScreen({ navigation }) {
       console.log("Signup successful");
       console.log("UID:", userCredential.user.uid);
 
-      Alert.alert("Signup successful", `UID: ${userCredential.user.uid}`);
+     // Alert.alert("Signup successful", `UID: ${userCredential.user.uid}`);
+        Alert.alert("Signup successful");
+
 
       // ➜ Plus tard : envoyer UID + fullName au backend
       navigation.navigate("Home");

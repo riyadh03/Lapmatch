@@ -185,17 +185,13 @@ export default function LoginScreen({ navigation }) {
           Sign Up
         </Text>
       </View>
-
-      <View style={styles.demoInfoBox}>
-        <Text style={styles.demoText}>Demo: user@test.com / password123</Text>
-        <Text style={styles.demoText}>Admin: admin@test.com / admin123</Text>
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: -100, //in case of issues this might be ze problem ಥ_ಥ
     flex: 1,
     padding: 20,
     justifyContent: "center",
@@ -287,17 +283,5 @@ const styles = StyleSheet.create({
     color: "#4953DD",
     fontWeight: "bold",
     marginLeft: 5,
-  },
-  demoInfoBox: {
-    backgroundColor: "#1E1E3F",
-    borderRadius: 8,
-    padding: 15,
-    marginTop: 30,
-    alignSelf: "stretch",
-  },
-  demoText: {
-    color: "#A0A0BC",
-    fontSize: 12,
-    lineHeight: 18,
-  },
+  }
 });
