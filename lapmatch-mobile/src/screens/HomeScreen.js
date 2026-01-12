@@ -175,20 +175,20 @@ export default function HomeScreen({ navigation }) {
           title="Laptop comparison"
           description="Compare multiple laptops side by side to find the best deal."
           badgeText="Hot"
-          badgeColor="#7C4DFF"
-          iconColor="#7C4DFF"
+          badgeColor="#ff8307"
+          iconColor="#ff8307"
           iconName="laptop" 
           onPress={() => navigation.navigate('PcComparison')}
         />
-        <SearchCard
+        {/* <SearchCard
           title="Search by name"
           description="Find laptops by their model names or brands quickly."
           badgeText="new"
           badgeColor="#ff8307"
           iconColor="#ff8307"
           iconName="search" 
-          onPress={() => navigation.navigate('SearchByName')}//fix it
-        />
+          onPress={() => navigation.navigate('SearchByName')}
+        /> */}
       </View>
     </ScrollView>
   );
