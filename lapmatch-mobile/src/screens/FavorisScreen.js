@@ -29,6 +29,13 @@ export default function FavorisScreen({ route, navigation }) {
     await loadFavorites();
   };
 
+  const navigateToDetails = (pc) => {
+    navigation.navigate('HomeTab', {
+      screen: 'PcDetails',
+      params: { pc },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -52,7 +59,7 @@ export default function FavorisScreen({ route, navigation }) {
             renderItem={({ item, index }) => (
               <PcCard
                 pc={item}
-                onPress={() => navigation.navigate('PcDetails', { pc: item })}
+                onPress={() => navigateToDetails(item)}
                 style={{ marginTop: index === 0 ? 0 : 15 }}
                 isFavoriteInitial={true}
                 onFavoriteChange={handleFavoriteChange}
