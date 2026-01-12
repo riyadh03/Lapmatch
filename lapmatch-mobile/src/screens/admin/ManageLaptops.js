@@ -1,18 +1,95 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, Dimensions } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, Dimensions, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-
+import useAdminGuard from "../hooks/useAdminGuard";
+import { deleteAdminLaptop, fetchAdminLaptopSummary, fetchAdminLaptops } from '../../services/laptopsAdminApi';
 const { width } = Dimensions.get('window');
 
-// Données fictives pour les laptops
-const LAPTOPS = [
-  { id: '1', model: 'MacBook Pro M2', brand: 'Apple', stock: 12, price: '24,500 dh', status: 'En stock', color: '#6366F1' },
-  { id: '2', model: 'XPS 15', brand: 'Dell', stock: 5, price: '18,900 dh', status: 'Rupture', color: '#EC4899' },
-  { id: '3', model: 'ROG Zephyrus', brand: 'Asus', stock: 8, price: '21,000 dh', status: 'En stock', color: '#10B981' },
-  { id: '4', model: 'ThinkPad X1', brand: 'Lenovo', stock: 15, price: '15,500 dh', status: 'En stock', color: '#F59E0B' },
-];
-
 export default function ManageLaptops() {
+  const loading = useAdminGuard();
+
+  const [laptops, setLaptops] = useState([]);
+  const [summary, setSummary] = useState({ total_products: 0, revenue: 0 });
+
+  const brandColors = useMemo(
+    () => ['#6366F1', '#EC4899', '#10B981', '#F59E0B', '#06B6D4', '#8B5CF6'],
+    []
+  );
+
+  const getBrand = (name) => {
+    if (!name) return 'Laptop';
+    const first = name.trim().split(' ')[0];
+    return first || 'Laptop';
+  };
+
+  const getModel = (name) => {
+    if (!name) return 'Unknown';
+    const parts = name.trim().split(' ');
+    if (parts.length <= 1) return name;
+    return parts.slice(1).join(' ');
+  };
+
+  const getColorForBrand = (brand) => {
+    const str = brand || 'Laptop';
+    let sum = 0;
+    for (let i = 0; i < str.length; i++) sum += str.charCodeAt(i);
+    return brandColors[sum % brandColors.length];
+  };
+
+  const formatPrice = (price) => {
+    if (price === null || price === undefined || Number.isNaN(Number(price))) return 'Prix N/A';
+    try {
+      return `${Number(price).toLocaleString()} dh`;
+    } catch {
+      return `${price} dh`;
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      const [list, sum] = await Promise.all([
+        fetchAdminLaptops(),
+        fetchAdminLaptopSummary(),
+      ]);
+
+      setLaptops(list);
+      setSummary({
+        total_products: sum?.total_products ?? 0,
+        revenue: sum?.revenue ?? 0,
+      });
+    } catch (e) {
+      Alert.alert('Erreur', "Impossible de charger les laptops");
+    }
+  };
+
+  useEffect(() => {
+    if (!loading) loadData();
+  }, [loading]);
+
+  const handleDelete = async (laptopId) => {
+    Alert.alert(
+      'Confirmation',
+      'Supprimer ce laptop ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAdminLaptop(laptopId);
+              await loadData();
+            } catch (e) {
+              Alert.alert('Erreur', 'Suppression impossible');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading) return null;
+
   return (
     <View style={styles.container}>
       {/* Header Fixe */}
@@ -32,43 +109,48 @@ export default function ManageLaptops() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Total Products</Text>
-            <Text style={styles.summaryValue}>40</Text>
+            <Text style={styles.summaryValue}>{summary.total_products}</Text>
           </View>
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Revenu</Text>
-            <Text style={[styles.summaryValue, { color: '#10B981' }]}>79 dh</Text>
+            <Text style={[styles.summaryValue, { color: '#10B981' }]}>
+              {formatPrice(summary.revenue)}
+            </Text>
           </View>
         </View>
 
         <Text style={styles.sectionTitle}>Products List</Text>
 
         {/* Liste des Laptops */}
-        {LAPTOPS.map((item) => (
-          <View key={item.id} style={styles.laptopCard}>
-            <View style={[styles.brandIndicator, { backgroundColor: item.color }]} />
+        {laptops.map((item) => {
+          const brand = getBrand(item.name);
+          const color = getColorForBrand(brand);
+          return (
+          <View key={item.laptop_id?.toString() || item.id?.toString()} style={styles.laptopCard}>
+            <View style={[styles.brandIndicator, { backgroundColor: color }]} />
             
             <View style={styles.laptopInfo}>
               <View style={styles.infoTop}>
-                <Text style={styles.laptopName}>{item.model}</Text>
-                <Text style={styles.laptopPrice}>{item.price}</Text>
+                <Text style={styles.laptopName}>{getModel(item.name)}</Text>
+                <Text style={styles.laptopPrice}>{formatPrice(item.price)}</Text>
               </View>
               
               <View style={styles.infoBottom}>
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.brand}</Text>
+                  <Text style={styles.badgeText}>{brand}</Text>
                 </View>
                 <View style={styles.actionIcons}>
                   <TouchableOpacity style={styles.iconBtnSmall}>
                     <MaterialCommunityIcons name="pencil-outline" size={20} color="#94A3B8" />{/* btn: edits laptop details */}
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtnSmall}>
+                  <TouchableOpacity style={styles.iconBtnSmall} onPress={() => handleDelete(item.laptop_id)}>
                     <MaterialCommunityIcons name="trash-can-outline" size={20} color="#EF4444" />{/* btn: deletes the laptop */}
                   </TouchableOpacity>
                 </View>
               </View>
             </View>
           </View>
-        ))}
+        )})}
 
       </ScrollView>
     </View>

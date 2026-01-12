@@ -16,7 +16,8 @@ import { getAuth } from "firebase/auth";
  * - Utilise ton IP locale (ex: "http://192.168.11.107:8000")
  * - Trouve ton IP avec : ipconfig (Windows) ou ifconfig (Mac/Linux)
  */
-const NGROK_URL = "https://furlable-salina-stereochromically.ngrok-free.dev";
+const ENV_URL = process.env.EXPO_PUBLIC_API_URL;
+const NGROK_URL = ENV_URL || "https://furlable-salina-stereochromically.ngrok-free.dev";
 const LOCAL_URL = "http://192.168.11.107:8000";
 
 /**
