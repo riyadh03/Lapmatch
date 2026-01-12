@@ -208,7 +208,7 @@ export default function SimpleSearchScreen({ navigation }) {
         />
         <View style={styles.rangeTextContainer}>
           <Text style={styles.rangeText}>500 dh</Text>
-          <Text style={styles.rangeText}>5.000 dh</Text>
+          <Text style={styles.rangeText}>50.000 dh</Text>
         </View>
       </View>
 
