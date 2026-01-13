@@ -1,12 +1,23 @@
-import { View, Text, FlatList, StyleSheet, StatusBar } from "react-native";
+import { View, Text, FlatList, StyleSheet, StatusBar, ActivityIndicator, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import PcCard from "../components/PcCard";
 import { favoritesService } from "../services/favoritesService";
+import {
+  fetchExpertRecommendations,
+  fetchNonExpertRecommendations,
+} from "../services/api";
 
 export default function ResultsScreen({ route, navigation }) {
-  const { results } = route.params || {};
-  const laptops = results?.data || results?.laptops || results || [];
+  const { results, resultsMeta } = route.params || {};
+  const initialLaptops = results?.data || results?.laptops || results || [];
+
+  const [laptops, setLaptops] = useState(initialLaptops);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(
+    Number(resultsMeta?.searchParams?.offset ?? 0) + (Number(resultsMeta?.searchParams?.limit ?? 7) || 7)
+  );
 
   const [favorites, setFavorites] = useState([]);
 
@@ -30,6 +41,65 @@ export default function ResultsScreen({ route, navigation }) {
 
   const handleFavoriteChange = async () => {
     await loadFavorites();
+  };
+
+  const loadMore = async () => {
+    if (isLoadingMore) return;
+    if (!resultsMeta?.mode || !resultsMeta?.searchParams) return;
+    if (!hasMore) return;
+
+    const limit = Number(resultsMeta.searchParams.limit ?? 7) || 7;
+    const nextParams = {
+      ...resultsMeta.searchParams,
+      offset,
+      limit,
+    };
+
+    setIsLoadingMore(true);
+    console.log("[ResultsScreen] 🔄 See more - mode:", resultsMeta.mode);
+    console.log("[ResultsScreen] 🔄 See more - params:", nextParams);
+
+    try {
+      let data;
+      if (resultsMeta.mode === "non-expert") {
+        data = await fetchNonExpertRecommendations(nextParams);
+      } else if (resultsMeta.mode === "expert") {
+        data = await fetchExpertRecommendations(nextParams);
+      } else {
+        console.log("[ResultsScreen] ⚠️ mode inconnu, pagination ignorée:", resultsMeta.mode);
+        return;
+      }
+
+      const newItems = data?.data || data?.laptops || [];
+      console.log("[ResultsScreen] ✅ See more - reçus:", newItems?.length || 0);
+
+      if (!newItems || newItems.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      setLaptops((prev) => {
+        const seen = new Set(prev.map((p) => p?.id ?? p?.laptop_id));
+        const merged = [...prev];
+        for (const item of newItems) {
+          const id = item?.id ?? item?.laptop_id;
+          if (!seen.has(id)) {
+            seen.add(id);
+            merged.push(item);
+          }
+        }
+        return merged;
+      });
+
+      if (newItems.length < limit) {
+        setHasMore(false);
+      }
+      setOffset((prev) => prev + limit);
+    } catch (e) {
+      console.error("[ResultsScreen] ❌ See more erreur:", e?.message || e);
+    } finally {
+      setIsLoadingMore(false);
+    }
   };
 
   console.log(
@@ -62,6 +132,25 @@ export default function ResultsScreen({ route, navigation }) {
               onFavoriteChange={handleFavoriteChange}
             />
           )}
+          ListFooterComponent={() => {
+            if (!resultsMeta?.mode) return null;
+            if (!hasMore) return null;
+            return (
+              <View style={styles.footer}>
+                <TouchableOpacity
+                  style={[styles.loadMoreBtn, isLoadingMore && styles.loadMoreBtnDisabled]}
+                  onPress={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.loadMoreText}>See more</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            );
+          }}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
@@ -88,5 +177,23 @@ const styles = StyleSheet.create({
     color: "#A0A0BC",
     marginBottom: 15,
     fontWeight: "500",
+  },
+  footer: {
+    paddingTop: 10,
+    paddingBottom: 30,
+  },
+  loadMoreBtn: {
+    backgroundColor: "#4953DD",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadMoreBtnDisabled: {
+    opacity: 0.6,
+  },
+  loadMoreText: {
+    color: "#fff",
+    fontWeight: "700",
   },
 });

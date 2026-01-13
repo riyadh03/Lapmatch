@@ -9,7 +9,7 @@ import ResultsScreen from '../screens/ResultsScreen';
 import PcDetailsScreen from '../screens/PcDetailsScreen';
 import PcComparisonScreen from '../screens/PcComparison';
 import SearchByNameScreen from '../screens/SearchByNameScreen';
-
+import AdminDashboard from '../screens/admin/AdminDashboard';
 const Stack = createNativeStackNavigator();
 
 export default function AppStack() {
@@ -29,6 +29,7 @@ export default function AppStack() {
       <Stack.Screen name="Results" component={ResultsScreen} />
       <Stack.Screen name="PcDetails" component={PcDetailsScreen} />
       <Stack.Screen name="PcComparison" component={PcComparisonScreen} />
+      <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
     </Stack.Navigator>
   );
 }

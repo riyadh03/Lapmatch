@@ -37,10 +37,20 @@ def get_current_admin(
     """
     Vérifie que l'utilisateur actuel est un Admin
     """
-    user_data = get_user_by_uid(current_user["uid"])
+    uid = current_user.get("uid")
+    email = current_user.get("email")
+    print(f"[ADMIN] 🔎 Vérification admin - uid={uid}, email={email}")
+    user_data = get_user_by_uid(uid)
+    if not user_data:
+        print(f"[ADMIN] ❌ Aucun user Neo4j trouvé pour uid={uid}")
+    else:
+        print(f"[ADMIN] 📄 Neo4j user_type={user_data.get('user_type')}, email={user_data.get('email')}")
+
     if not user_data or user_data.get("user_type") != "Admin":
+        print(f"[ADMIN] ⛔ Accès refusé - rôle Admin requis")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Accès refusé: rôle Admin requis"
         )
+    print(f"[ADMIN] ✅ Accès admin accordé")
     return current_user

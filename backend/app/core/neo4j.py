@@ -2,13 +2,14 @@ from neo4j import GraphDatabase
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+from neo4j.exceptions import AuthError
 
 # Charger le .env depuis le dossier backend
 backend_dir = Path(__file__).parent.parent.parent
 root_env_path = backend_dir.parent / ".env"
 backend_env_path = backend_dir / ".env"
-load_dotenv(dotenv_path=root_env_path)
 load_dotenv(dotenv_path=backend_env_path)
+load_dotenv(dotenv_path=root_env_path, override=True)
 
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
@@ -57,6 +58,12 @@ class Neo4jDatabase:
             self._connection_attempted = True
         except Exception as e:
             print(f"[NEO4J] ❌ Erreur de connexion: {e}")
+            if isinstance(e, AuthError):
+                print("[NEO4J] 🔐 Échec d'authentification Neo4j")
+                print(f"[NEO4J]   URI: {NEO4J_URI}")
+                print(f"[NEO4J]   USER: {NEO4J_USER}")
+                print(f"[NEO4J]   DATABASE: {NEO4J_DATABASE}")
+                print("[NEO4J] 💡 Vérifiez que le mot de passe Neo4j Desktop correspond à NEO4J_PASSWORD (.env)")
             print(f"[NEO4J] 💡 Vérifiez que Neo4j est démarré et accessible à {NEO4J_URI}")
             self._connection_attempted = True
             raise

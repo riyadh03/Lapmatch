@@ -140,7 +140,13 @@ export default function SimpleSearchScreen({ navigation }) {
       // Navigation vers l'écran Results avec les données reçues
       // Support des deux formats: {success, data} ou {laptops}
       const results = data?.data || data?.laptops || data || [];
-      navigation.navigate("Results", { results });
+      navigation.navigate("Results", {
+        results,
+        resultsMeta: {
+          mode: "non-expert",
+          searchParams,
+        },
+      });
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error(

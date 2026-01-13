@@ -71,6 +71,13 @@ def get_recommendations_expert(
     """
     Return a list of laptops filtered for expert users
     """
+    import time
+    start_time = time.time()
+    print(f"[BACKEND] 📥 Requête reçue - /recommendations/expert")
+    print(
+        f"[BACKEND] 📋 Paramètres: cpu={cpu_type}, gpu={gpu_type}, ram={ram_gb}, storage={storage_gb}, "
+        f"budget={budget}, screen={screen_size}, weight={weight}, eco={eco_level}, offset={offset}, limit={limit}"
+    )
     try:
         laptops = recommend_expert(
             cpu_type=cpu_type,
@@ -85,5 +92,9 @@ def get_recommendations_expert(
             limit=limit
         )
     except Exception as e:
+        duration = time.time() - start_time
+        print(f"[BACKEND] ❌ Erreur /recommendations/expert après {duration:.2f}s: {e}")
         raise HTTPException(status_code=503, detail=f"Neo4j unavailable: {e}")
+    duration = time.time() - start_time
+    print(f"[BACKEND] ✅ /recommendations/expert OK en {duration:.2f}s - {len(laptops)} résultats")
     return {"count": len(laptops), "laptops": laptops}

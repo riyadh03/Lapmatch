@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import useAdminGuard from "../hooks/useAdminGuard";
+import useAdminGuard from "../../hooks/useAdminGuard";
 const { width } = Dimensions.get('window');
 
 export default function AdminDashboard() {

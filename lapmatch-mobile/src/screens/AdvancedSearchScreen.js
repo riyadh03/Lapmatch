@@ -170,6 +170,10 @@ export default function AdvancedSearchScreen({ navigation }) {
 
       navigation.navigate("Results", {
         results: data.laptops || data.data || [],
+        resultsMeta: {
+          mode: "expert",
+          searchParams,
+        },
       });
     } catch (error) {
       const duration = Date.now() - startTime;

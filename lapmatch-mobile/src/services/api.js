@@ -79,6 +79,26 @@ const fetchWithTimeout = async (url, options, timeout = REQUEST_TIMEOUT) => {
   }
 };
 
+const parseErrorBody = async (response) => {
+  try {
+    const raw = await response.text();
+    try {
+      const json = JSON.parse(raw);
+      if (json?.detail) return String(json.detail);
+      if (json?.error?.message) return String(json.error.message);
+      return raw;
+    } catch (_parseError) {
+      return raw;
+    }
+  } catch (_e) {
+    try {
+      return await response.text();
+    } catch (__e) {
+      return "";
+    }
+  }
+};
+
 /**
  * 🔹 Recherche NON-EXPERT
  * Appelle : GET /recommendations/non-expert
@@ -118,7 +138,7 @@ export const fetchNonExpertRecommendations = async (params) => {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await parseErrorBody(response);
       console.error("❌ [API] Erreur HTTP:", response.status, errorText);
       throw new Error(
         `Erreur ${response.status}: ${
@@ -218,7 +238,7 @@ export const fetchExpertRecommendations = async (params) => {
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await parseErrorBody(response);
       console.error("❌ [API] Erreur HTTP:", response.status, errorText);
       throw new Error(
         `Erreur ${response.status}: ${

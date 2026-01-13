@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 backend_dir = Path(__file__).parent.parent.parent
 root_env_path = backend_dir.parent / ".env"
 backend_env_path = backend_dir / ".env"
-load_dotenv(dotenv_path=root_env_path)
 load_dotenv(dotenv_path=backend_env_path)
+load_dotenv(dotenv_path=root_env_path, override=True)
 
 
 def get_env(name: str, default: Optional[str] = None) -> Optional[str]:
