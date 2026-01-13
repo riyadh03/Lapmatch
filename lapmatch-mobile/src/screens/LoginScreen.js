@@ -19,6 +19,7 @@ import { View, Text, TextInput, StyleSheet } from "react-native";
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import AppButton from "../components/AppButton";
 import { loginUser } from "../services/authService";
+import { getMe } from "../services/authApi";
 
 export default function LoginScreen({ navigation }) {
   // 🔹 États pour les inputs
@@ -62,7 +63,19 @@ export default function LoginScreen({ navigation }) {
     try {
       const userCredential = await loginUser(email.trim(), password);
       console.log("Login successful, UID:", userCredential.user.uid);
-      navigation.navigate("Home");
+
+      try {
+        const me = await getMe();
+        console.log("[Login] /auth/me:", me);
+        if (me?.is_admin) {
+          navigation.navigate("AdminDashboard");
+        } else {
+          navigation.navigate("Home");
+        }
+      } catch (meErr) {
+        console.log("[Login] ❌ getMe error:", meErr?.message || meErr);
+        navigation.navigate("Home");
+      }
     } catch (error) {
       console.log("Login error:", error.message || error);
 

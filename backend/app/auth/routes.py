@@ -15,6 +15,7 @@ def verify():
 
 @router.get("/me")
 def me(current_user: dict = Depends(get_current_user)):
+    print(f"[ME] 👤 /auth/me uid={current_user.get('uid')} email={current_user.get('email')}")
     user_node = get_user_by_uid(current_user["uid"])
 
     if not user_node:
@@ -34,6 +35,9 @@ def me(current_user: dict = Depends(get_current_user)):
             user_node = update_user_by_uid(current_user["uid"], user_type="Admin") or user_node
 
     user_data = dict(user_node) if user_node else {}
+    print(
+        f"[ME] ✅ /auth/me user_type={user_data.get('user_type')} is_admin={user_data.get('user_type') == 'Admin'} neo4j_email={user_data.get('email')}"
+    )
     return ok(
         {
             "uid": current_user.get("uid"),
