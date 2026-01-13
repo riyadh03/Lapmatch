@@ -12,7 +12,7 @@ import {
   Modal
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import useAdminGuard from "../hooks/useAdminGuard";
+import useAdminGuard from "../../hooks/useAdminGuard";
 import {
   fetchAdminUsers,
   createAdminUser,
@@ -89,7 +89,7 @@ const { width } = Dimensions.get('window');
 // ];
 
 
-export default function ManageUsers() {
+export default function ManageUsers({ navigation }) {
   const loading = useAdminGuard();
 
   const [users, setUsers] = useState([]);
@@ -244,7 +244,7 @@ export default function ManageUsers() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#F8FAFC" />
         </TouchableOpacity>
         <Text style={styles.title}>Manage Users</Text>

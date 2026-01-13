@@ -1,4 +1,3 @@
-import axios from "axios";
 import { getAuth } from "firebase/auth";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -12,37 +11,59 @@ const getToken = async () => {
 
 export const fetchAdminLaptopSummary = async () => {
   const token = await getToken();
-  const res = await axios.get(`${BASE_URL}/admin/laptops/summary`, {
+  const res = await fetch(`${BASE_URL}/admin/laptops/summary`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
-  return res.data?.data ?? res.data;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data?.detail || data?.error?.message;
+    throw new Error(detail || `Erreur ${res.status}`);
+  }
+  return data?.data ?? data;
 };
 
 export const fetchAdminLaptops = async () => {
   const token = await getToken();
-  const res = await axios.get(`${BASE_URL}/admin/laptops`, {
+  const res = await fetch(`${BASE_URL}/admin/laptops`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-
-  const payload = res.data?.data ?? res.data;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data?.detail || data?.error?.message;
+    throw new Error(detail || `Erreur ${res.status}`);
+  }
+  const payload = data?.data ?? data;
   return payload?.laptops ?? [];
 };
 
 export const deleteAdminLaptop = async (laptopId) => {
   const token = await getToken();
-  const res = await axios.delete(`${BASE_URL}/admin/laptops/${laptopId}`, {
+  const res = await fetch(`${BASE_URL}/admin/laptops/${laptopId}`, {
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
-
-  return res.data;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data?.detail || data?.error?.message;
+    throw new Error(detail || `Erreur ${res.status}`);
+  }
+  return data;
 };
 
 export const updateAdminLaptop = async (laptopId, updates) => {
   const token = await getToken();
-  const res = await axios.patch(`${BASE_URL}/admin/laptops/${laptopId}`, updates, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await fetch(`${BASE_URL}/admin/laptops/${laptopId}`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(updates || {}),
   });
-
-  return res.data?.data ?? res.data;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data?.detail || data?.error?.message;
+    throw new Error(detail || `Erreur ${res.status}`);
+  }
+  return data?.data ?? data;
 };

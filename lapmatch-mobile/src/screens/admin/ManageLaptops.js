@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Image, Dimensions, Alert } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import useAdminGuard from "../hooks/useAdminGuard";
+import useAdminGuard from "../../hooks/useAdminGuard";
 import { deleteAdminLaptop, fetchAdminLaptopSummary, fetchAdminLaptops } from '../../services/laptopsAdminApi';
 const { width } = Dimensions.get('window');
 
-export default function ManageLaptops() {
+export default function ManageLaptops({ navigation }) {
   const loading = useAdminGuard();
 
   const [laptops, setLaptops] = useState([]);
@@ -94,7 +94,7 @@ export default function ManageLaptops() {
     <View style={styles.container}>
       {/* Header Fixe */}
       <View style={styles.header}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#F8FAFC" />{/*btn: takes you back to admin dashboard */}
         </TouchableOpacity>
         <Text style={styles.title}>Manage Laptops</Text>

@@ -1,16 +1,46 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import useAdminGuard from "../../hooks/useAdminGuard";
+import { fetchAdminLaptopSummary } from '../../services/laptopsAdminApi';
+import { fetchAdminUsersSummary } from '../../services/adminApi';
 const { width } = Dimensions.get('window');
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ navigation }) {
   const loading = useAdminGuard();
+
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total_users: 0,
+    total_products: 0,
+  });
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        const [laptops, users] = await Promise.all([
+          fetchAdminLaptopSummary(),
+          fetchAdminUsersSummary(),
+        ]);
+        setStats({
+          total_users: users?.total_users ?? 0,
+          total_products: laptops?.total_products ?? 0,
+        });
+      } catch (_e) {
+        setStats({ total_users: 0, total_products: 0 });
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (!loading) loadStats();
+  }, [loading]);
 
   if (loading) return null;
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      
+
       {/* Header avec un look plus aéré */}
       <View style={styles.header}>
         <View>
@@ -25,16 +55,20 @@ export default function AdminDashboard() {
       {/* Stats Cards avec icônes colorées */}
       <View style={styles.cardsContainer}>
         {[
-          { label: 'Users', val: '120', icon: 'account-group', color: '#6366F1' },
-          { label: 'Orders', val: '75', icon: 'cart', color: '#10B981' },
-          { label: 'Revenue', val: '3,450 dh', icon: 'cash', color: '#F59E0B' },
-          { label: 'Laptops', val: '48', icon: 'laptop', color: '#EC4899' },
+          { label: 'Users', val: String(stats.total_users), icon: 'account-group', color: '#6366F1' },
+          { label: 'Orders', val: '--', icon: 'cart', color: '#10B981' },
+          { label: 'Revenue', val: '--', icon: 'cash', color: '#F59E0B' },
+          { label: 'Laptops', val: String(stats.total_products), icon: 'laptop', color: '#EC4899' },
         ].map((item, idx) => (
           <View key={idx} style={styles.card}>
             <View style={[styles.iconCircle, { backgroundColor: item.color + '15' }]}>
               <MaterialCommunityIcons name={item.icon} size={24} color={item.color} />
             </View>
-            <Text style={styles.cardNumber}>{item.val}</Text>
+            {statsLoading ? (
+              <ActivityIndicator size="small" color="#CBD5E1" />
+            ) : (
+              <Text style={styles.cardNumber}>{item.val}</Text>
+            )}
             <Text style={styles.cardTitle}>{item.label}</Text>
           </View>
         ))}
@@ -44,14 +78,14 @@ export default function AdminDashboard() {
       <View style={styles.actionsContainer}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ManageLaptops')}>
             <View style={[styles.actionIconBox, { backgroundColor: '#6366F1' }]}>
               <Ionicons name="cube-outline" size={26} color="#fff" />
             </View>
             <Text style={styles.actionText}>Manage laptops</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionBtn}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('ManageUsers')}>
             <View style={[styles.actionIconBox, { backgroundColor: '#8B5CF6' }]}>
               <Ionicons name="people-outline" size={26} color="#fff" />
             </View>

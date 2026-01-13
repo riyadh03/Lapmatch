@@ -10,6 +10,8 @@ import PcDetailsScreen from '../screens/PcDetailsScreen';
 import PcComparisonScreen from '../screens/PcComparison';
 import SearchByNameScreen from '../screens/SearchByNameScreen';
 import AdminDashboard from '../screens/admin/AdminDashboard';
+import ManageLaptops from '../screens/admin/ManageLaptops';
+import ManageUsers from '../screens/admin/ManageUsers';
 const Stack = createNativeStackNavigator();
 
 export default function AppStack() {
@@ -30,6 +32,8 @@ export default function AppStack() {
       <Stack.Screen name="PcDetails" component={PcDetailsScreen} />
       <Stack.Screen name="PcComparison" component={PcComparisonScreen} />
       <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+      <Stack.Screen name="ManageLaptops" component={ManageLaptops} options={{ headerShown: false }} />
+      <Stack.Screen name="ManageUsers" component={ManageUsers} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }

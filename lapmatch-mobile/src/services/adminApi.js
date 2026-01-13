@@ -1,5 +1,4 @@
 // services/adminApi.js
-import axios from "axios";
 import { getAuth } from "firebase/auth";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -15,11 +14,17 @@ const getToken = async () => {
 export const fetchAdminUsers = async () => {
   try {
     const token = await getToken();
-    const response = await axios.get(`${BASE_URL}/admin/users`, {
+    const response = await fetch(`${BASE_URL}/admin/users`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data?.detail || data?.error?.message;
+      throw new Error(detail || `Erreur ${response.status}`);
+    }
 
-    const users = response.data?.data?.users || response.data?.users || [];
+    const payload = data?.data ?? data;
+    const users = payload?.users || [];
     return users.map((u) => ({
       uid: u.uid,
       email: u.email,
@@ -34,21 +39,49 @@ export const fetchAdminUsers = async () => {
   }
 };
 
+export const fetchAdminUsersSummary = async () => {
+  const token = await getToken();
+  const response = await fetch(`${BASE_URL}/admin/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const detail = data?.detail || data?.error?.message;
+    throw new Error(detail || `Erreur ${response.status}`);
+  }
+
+  const payload = data?.data ?? data;
+  const users = payload?.users || [];
+  return {
+    total_users: Number(payload?.count ?? users.length) || 0,
+    total_admins: users.filter((u) => (u.user_type || u.role) === "Admin").length,
+    total_regular_users: users.filter((u) => (u.user_type || u.role) === "User").length,
+  };
+};
+
 // === 2️⃣ Créer un Admin ===
 export const createAdminUser = async ({ uid, email, full_name }) => {
   try {
     const token = await getToken();
 
-    await axios.post(
-      `${BASE_URL}/admin/users`,
-      {
+    const response = await fetch(`${BASE_URL}/admin/users`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         uid,
         email,
         full_name,
         user_type: "Admin",
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data?.detail || data?.error?.message;
+      throw new Error(detail || `Erreur ${response.status}`);
+    }
 
     return true;
   } catch (error) {
@@ -61,9 +94,15 @@ export const createAdminUser = async ({ uid, email, full_name }) => {
 export const deleteUser = async (uid) => {
   try {
     const token = await getToken();
-    await axios.delete(`${BASE_URL}/admin/users/${uid}`, {
+    const response = await fetch(`${BASE_URL}/admin/users/${uid}`, {
+      method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const detail = data?.detail || data?.error?.message;
+      throw new Error(detail || `Erreur ${response.status}`);
+    }
     return true;
   } catch (error) {
     console.error("Erreur deleteUser:", error);
